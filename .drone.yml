@@ -1,0 +1,29 @@
+workspace:
+  base: /go
+  path: src/github.com/drone/drone-vault
+
+pipeline:
+- test:
+    image: golang:1.10
+    commands:
+    - go get -u github.com/golang/dep/cmd/dep
+    - dep ensure
+    - go test -v -cover ./...
+    - CGO_ENABLED=0 go build -o release/linux/amd64/drone-vault github.com/drone/drone-vault/cmd/drone-vault
+
+- publish:
+    image: plugins/docker
+    dockerfile: docker/Dockerfile
+    repo: drone/vault
+    auto_tag: true
+    secrets:
+    - docker_username
+    - docker_password
+
+secrets:
+  docker_username:
+    external:
+      name: drone/docker#username
+  docker_password:
+    external:
+      name: drone/docker#password
