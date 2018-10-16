@@ -13,10 +13,11 @@
   packages = [
     "drone",
     "plugin/internal/aesgcm",
+    "plugin/internal/client",
     "plugin/logger",
     "plugin/secret"
   ]
-  revision = "1c015eaecb1c62d827f7d1f3301a33e8e5fb23ca"
+  revision = "d00b5c24549e5676acefedc4d5ef115471bf48eb"
 
 [[projects]]
   branch = "master"

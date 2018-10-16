@@ -7,7 +7,6 @@ package plugin
 import (
 	"context"
 	"errors"
-	"strings"
 
 	"github.com/drone/drone-go/drone"
 	"github.com/drone/drone-go/plugin/secret"
@@ -28,15 +27,10 @@ type plugin struct {
 }
 
 func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, error) {
-	path := req.Name
-	name := "value"
-
-	// drone requests the secret name in secret:key format.
-	// Extract the secret and key from the string.
-	parts := strings.Split(req.Name, "#")
-	if len(parts) == 2 {
-		path = parts[0]
-		name = parts[1]
+	path := req.Path
+	name := req.Name
+	if name == "" {
+		name = "value"
 	}
 
 	// makes an api call to the aws secrets manager and attempts

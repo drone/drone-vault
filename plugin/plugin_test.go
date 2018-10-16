@@ -40,7 +40,8 @@ func TestPlugin(t *testing.T) {
 	})
 
 	req := &secret.Request{
-		Name: "secret/docker#username",
+		Path: "secret/docker",
+		Name: "username",
 		Build: drone.Build{
 			Event: "push",
 		},
@@ -80,7 +81,8 @@ func TestPlugin_FilterRepo(t *testing.T) {
 	})
 
 	req := &secret.Request{
-		Name: "secret/docker#username",
+		Path: "secret/docker",
+		Name: "username",
 		Build: drone.Build{
 			Event: "push",
 		},
@@ -112,7 +114,8 @@ func TestPlugin_FilterEvent(t *testing.T) {
 	})
 
 	req := &secret.Request{
-		Name: "docker#username",
+		Path: "secret/docker",
+		Name: "username",
 		Build: drone.Build{
 			Event: "pull_request",
 		},
@@ -145,7 +148,8 @@ func TestPlugin_NotFound(t *testing.T) {
 	})
 
 	req := &secret.Request{
-		Name: "docker#username",
+		Path: "secret/docker",
+		Name: "username",
 		Build: drone.Build{
 			Event: "pull_request",
 		},
@@ -179,7 +183,8 @@ func TestPlugin_KeyNotFound(t *testing.T) {
 	})
 
 	req := &secret.Request{
-		Name: "docker#token",
+		Path: "secret/docker",
+		Name: "token",
 		Build: drone.Build{
 			Event: "push",
 		},
