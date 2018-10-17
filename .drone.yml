@@ -11,7 +11,7 @@ workspace:
   path: src/github.com/drone/drone-vault
 
 steps:
-- name: test
+- name: build
   image: golang:1.10
   commands:
   - go get -u github.com/golang/dep/cmd/dep
