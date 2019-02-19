@@ -1,40 +1,382 @@
 ---
 kind: pipeline
-name: default
+name: testing
 
 platform:
   os: linux
   arch: amd64
 
-workspace:
-  base: /go
-  path: src/github.com/drone/drone-vault
+steps:
+- name: vet
+  pull: always
+  image: golang:1.11
+  commands:
+  - go vet ./...
+  environment:
+    GO111MODULE: on
+  volumes:
+  - name: gopath
+    path: /go
+
+- name: test
+  pull: always
+  image: golang:1.11
+  commands:
+  - go test -cover ./...
+  environment:
+    GO111MODULE: on
+  volumes:
+  - name: gopath
+    path: /go
+
+volumes:
+- name: gopath
+  temp: {}
+
+trigger:
+  ref:
+  - refs/heads/master
+  - "refs/tags/**"
+  - "refs/pull/**"
+
+---
+kind: pipeline
+name: linux-amd64
+
+platform:
+  os: linux
+  arch: amd64
 
 steps:
 - name: build
-  image: golang:1.10
+  pull: always
+  image: golang:1.11
   commands:
-  - go get -u github.com/golang/dep/cmd/dep
-  - dep ensure
-  - go test -v -cover ./...
-  - CGO_ENABLED=0 go build -o release/linux/amd64/drone-vault github.com/drone/drone-vault/cmd/drone-vault
+  - go build -v -a -tags netgo -o release/linux/amd64/drone-vault-secrets ./cmd/drone-vault-secrets
+  environment:
+    CGO_ENABLED: 0
+    GO111MODULE: on
+
+- name: dryrun
+  pull: always
+  image: plugins/docker:linux-amd64
+  settings:
+    daemon_off: false
+    dockerfile: docker/Dockerfile.linux.amd64
+    dry_run: true
+    password:
+      from_secret: docker_password
+    repo: drone/vault-secrets
+    tags: linux-amd64
+    username:
+      from_secret: docker_username
+  when:
+    event:
+    - pull_request
 
 - name: publish
-  image: plugins/docker
+  pull: always
+  image: plugins/docker:linux-amd64
   settings:
     auto_tag: true
-    dockerfile: docker/Dockerfile
+    auto_tag_suffix: linux-amd64
+    daemon_off: false
+    dockerfile: docker/Dockerfile.linux.amd64
     password:
-      $secret: docker_password
-    repo: drone/vault
+      from_secret: docker_password
+    repo: drone/vault-secrets
     username:
-      $secret: docker_username
+      from_secret: docker_username
+  when:
+    event:
+      exclude:
+      - pull_request
+
+- name: tarball
+  pull: always
+  image: golang:1.11
+  commands:
+  - tar -cvzf release/drone-vault-secrets_linux_amd64.tar.gz -C release/linux/amd64 drone-vault-secrets
+  - "sha256sum release/drone-vault-secrets_linux_amd64.tar.gz > release/drone-vault-secrets_linux_amd64.tar.gz.sha256"
+  when:
+    event:
+    - tag
+
+- name: gpgsign
+  pull: always
+  image: plugins/gpgsign
+  settings:
+    files:
+    - "release/*.tar.gz"
+    - "release/*.tar.gz.sha256"
+    key:
+      from_secret: gpgsign_key
+    passphrase:
+      from_secret: gpgkey_passphrase
+  when:
+    event:
+    - tag
+
+- name: github
+  pull: always
+  image: plugins/github-release
+  settings:
+    files:
+    - "release/*.tar.gz"
+    - "release/*.tar.gz.sha256"
+    - "release/*.tar.gz.asc"
+    token:
+      from_secret: github_token
+  when:
+    event:
+    - tag
+
+trigger:
+  ref:
+  - refs/heads/master
+  - "refs/tags/**"
+  - "refs/pull/**"
+
+depends_on:
+- testing
 
 ---
-kind: secret
-type: external
-data:
-  docker_password: "drone/docker#password"
-  docker_username: "drone/docker#username"
+kind: pipeline
+name: linux-arm64
+
+platform:
+  os: linux
+  arch: arm64
+
+steps:
+- name: build
+  pull: always
+  image: golang:1.11
+  commands:
+  - go build -v -a -tags netgo -o release/linux/arm64/drone-vault-secrets ./cmd/drone-vault-secrets
+  environment:
+    CGO_ENABLED: 0
+    GO111MODULE: on
+
+- name: dryrun
+  pull: always
+  image: plugins/docker:linux-arm64
+  settings:
+    daemon_off: false
+    dockerfile: docker/Dockerfile.linux.arm64
+    dry_run: true
+    password:
+      from_secret: docker_password
+    repo: drone/vault-secrets
+    tags: linux-arm64
+    username:
+      from_secret: docker_username
+  when:
+    event:
+    - pull_request
+
+- name: publish
+  pull: always
+  image: plugins/docker:linux-arm64
+  settings:
+    auto_tag: true
+    auto_tag_suffix: linux-arm64
+    daemon_off: false
+    dockerfile: docker/Dockerfile.linux.arm64
+    password:
+      from_secret: docker_password
+    repo: drone/vault-secrets
+    username:
+      from_secret: docker_username
+  when:
+    event:
+      exclude:
+      - pull_request
+
+- name: tarball
+  pull: always
+  image: golang:1.11
+  commands:
+  - tar -cvzf release/drone-vault-secrets_linux_arm64.tar.gz -C release/linux/arm64 drone-vault-secrets
+  - "sha256sum release/drone-vault-secrets_linux_arm64.tar.gz > release/drone-vault-secrets_linux_arm64.tar.gz.sha256"
+  when:
+    event:
+    - tag
+
+- name: gpgsign
+  pull: always
+  image: plugins/gpgsign
+  settings:
+    files:
+    - "release/*.tar.gz"
+    - "release/*.tar.gz.sha256"
+    key:
+      from_secret: gpgsign_key
+    passphrase:
+      from_secret: gpgkey_passphrase
+  when:
+    event:
+    - tag
+
+- name: github
+  pull: always
+  image: plugins/github-release
+  settings:
+    files:
+    - "release/*.tar.gz"
+    - "release/*.tar.gz.sha256"
+    - "release/*.tar.gz.asc"
+    token:
+      from_secret: github_token
+  when:
+    event:
+    - tag
+
+trigger:
+  ref:
+  - refs/heads/master
+  - "refs/tags/**"
+  - "refs/pull/**"
+
+depends_on:
+- testing
+
+---
+kind: pipeline
+name: linux-arm
+
+platform:
+  os: linux
+  arch: arm
+
+steps:
+- name: build
+  pull: always
+  image: golang:1.11
+  commands:
+  - go build -v -a -tags netgo -o release/linux/arm/drone-vault-secrets ./cmd/drone-vault-secrets
+  environment:
+    CGO_ENABLED: 0
+    GO111MODULE: on
+
+- name: dryrun
+  pull: always
+  image: plugins/docker:linux-arm
+  settings:
+    daemon_off: false
+    dockerfile: docker/Dockerfile.linux.arm
+    dry_run: true
+    password:
+      from_secret: docker_password
+    repo: drone/vault-secrets
+    tags: linux-arm
+    username:
+      from_secret: docker_username
+  when:
+    event:
+    - pull_request
+
+- name: publish
+  pull: always
+  image: plugins/docker:linux-arm
+  settings:
+    auto_tag: true
+    auto_tag_suffix: linux-arm
+    daemon_off: false
+    dockerfile: docker/Dockerfile.linux.arm
+    password:
+      from_secret: docker_password
+    repo: drone/vault-secrets
+    username:
+      from_secret: docker_username
+  when:
+    event:
+      exclude:
+      - pull_request
+
+- name: tarball
+  pull: always
+  image: golang:1.11
+  commands:
+  - tar -cvzf release/drone-vault-secrets_linux_arm.tar.gz -C release/linux/arm drone-vault-secrets
+  - "sha256sum release/drone-vault-secrets_linux_arm.tar.gz > release/drone-vault-secrets_linux_arm.tar.gz.sha256"
+  when:
+    event:
+    - tag
+
+- name: gpgsign
+  pull: always
+  image: plugins/gpgsign
+  settings:
+    files:
+    - "release/*.tar.gz"
+    - "release/*.tar.gz.sha256"
+    key:
+      from_secret: gpgsign_key
+    passphrase:
+      from_secret: gpgkey_passphrase
+  when:
+    event:
+    - tag
+
+- name: github
+  pull: always
+  image: plugins/github-release
+  settings:
+    files:
+    - "release/*.tar.gz"
+    - "release/*.tar.gz.sha256"
+    - "release/*.tar.gz.asc"
+    token:
+      from_secret: github_token
+  when:
+    event:
+    - tag
+
+trigger:
+  ref:
+  - refs/heads/master
+  - "refs/tags/**"
+  - "refs/pull/**"
+
+depends_on:
+- testing
+
+---
+kind: pipeline
+name: notifications
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: manifest
+  pull: always
+  image: plugins/manifest
+  settings:
+    ignore_missing: true
+    password:
+      from_secret: docker_password
+    spec: docker/manifest.tmpl
+    username:
+      from_secret: docker_username
+
+- name: microbadger
+  pull: always
+  image: plugins/webhook
+  settings:
+    url:
+      from_secret: microbadger_url
+
+trigger:
+  ref:
+  - refs/heads/master
+  - "refs/tags/**"
+
+depends_on:
+- linux-amd64
+- linux-arm64
+- linux-arm
 
 ...
