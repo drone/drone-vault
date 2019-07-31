@@ -8,4 +8,4 @@
 [![Go Doc](https://godoc.org/github.com/drone/drone-vault-secrets?status.svg)](http://godoc.org/github.com/drone/drone-vault-secrets)
 [![Go Report](https://goreportcard.com/badge/github.com/drone/drone-vault-secrets)](https://goreportcard.com/report/github.com/drone/drone-vault-secrets)
 
-TBD
+Secrets management through Hashicorp Vault within Drone continuous integration server. Please see the official documentation at https://docs.drone.io/extend/secrets/vault/.

@@ -1,20 +1,15 @@
-local windows_pipe = '\\\\\\\\.\\\\pipe\\\\docker_engine';
-local windows_pipe_volume = 'docker_pipe';
-local test_pipeline_name = 'testing';
-
-local windows(os) = os == 'windows';
-
-local golang_image(os, version) =
-  'golang:' + '1.11' + if windows(os) then '-windowsservercore-' + version else '';
+local test_pipeline = 'testing';
 
 {
   test(os='linux', arch='amd64', version='')::
-    local is_windows = windows(os);
-    local golang = golang_image(os, version);
-    local volumes = if is_windows then [{name: 'gopath', path: 'C:\\\\gopath'}] else [{name: 'gopath', path: '/go',}];
+    local volumes = [{
+      name: 'gopath',
+      path: '/go',
+    }];
+
     {
       kind: 'pipeline',
-      name: test_pipeline_name,
+      name: test_pipeline,
       platform: {
         os: os,
         arch: arch,
@@ -23,11 +18,7 @@ local golang_image(os, version) =
       steps: [
         {
           name: 'vet',
-          image: golang,
-          pull: 'always',
-          environment: {
-            GO111MODULE: 'on',
-          },
+          image: 'golang:1.12',
           commands: [
             'go vet ./...',
           ],
@@ -35,11 +26,7 @@ local golang_image(os, version) =
         },
         {
           name: 'test',
-          image: golang,
-          pull: 'always',
-          environment: {
-            GO111MODULE: 'on',
-          },
+          image: 'golang:1.12',
           commands: [
             'go test -cover ./...',
           ],
@@ -53,17 +40,17 @@ local golang_image(os, version) =
           'refs/pull/**',
         ],
       },
-      volumes: [{name: 'gopath', temp: {}}]
+      volumes: [{
+        name: 'gopath',
+        temp: {},
+      }],
     },
 
   build(name, os='linux', arch='amd64', version='')::
-    local is_windows = windows(os);
-    local tag = if is_windows then os + '-' + version else os + '-' + arch;
-    local file_suffix = std.strReplace(tag, '-', '.');
-    local volumes = if is_windows then [{ name: windows_pipe_volume, path: windows_pipe }] else [];
-    local golang = golang_image(os, version);
-    local docker_name = 'drone/' + std.splitLimit(name, '-', 1)[1];
-    local extension = if is_windows then '.exe' else '';
+    local tag = os + '-' + arch;
+    local suffix = std.strReplace(tag, '-', '.');
+    local target = 'drone/' + std.splitLimit(name, '-', 1)[1];
+
     {
       kind: 'pipeline',
       name: tag,
@@ -75,30 +62,25 @@ local golang_image(os, version) =
       steps: [
         {
           name: 'build',
-          image: golang,
-          pull: 'always',
+          image: 'golang:1.12',
           environment: {
             CGO_ENABLED: '0',
-            GO111MODULE: 'on',
           },
           commands: [
-            'go build -v -a -tags netgo -o release/' + os + '/' + arch + '/' + name + extension + ' ./cmd/' + name,
+            'go build -v -a -tags netgo -o release/' + os + '/' + arch + '/' + name + ' ./cmd/' + name,
           ],
         },
         {
           name: 'dryrun',
           image: 'plugins/docker:' + tag,
-          pull: 'always',
           settings: {
             dry_run: true,
             tags: tag,
-            dockerfile: 'docker/Dockerfile.' + file_suffix,
-            daemon_off: if is_windows then 'true' else 'false',
-            repo: docker_name,
+            dockerfile: 'docker/Dockerfile.' + suffix,
+            repo: target,
             username: { from_secret: 'docker_username' },
             password: { from_secret: 'docker_password' },
           },
-          volumes: if std.length(volumes) > 0 then volumes,
           when: {
             event: ['pull_request'],
           },
@@ -106,17 +88,14 @@ local golang_image(os, version) =
         {
           name: 'publish',
           image: 'plugins/docker:' + tag,
-          pull: 'always',
           settings: {
             auto_tag: true,
             auto_tag_suffix: tag,
-            daemon_off: if is_windows then 'true' else 'false',
-            dockerfile: 'docker/Dockerfile.' + file_suffix,
-            repo: docker_name,
+            dockerfile: 'docker/Dockerfile.' + suffix,
+            repo: target,
             username: { from_secret: 'docker_username' },
             password: { from_secret: 'docker_password' },
           },
-          volumes: if std.length(volumes) > 0 then volumes,
           when: {
             event: {
               exclude: ['pull_request'],
@@ -125,8 +104,7 @@ local golang_image(os, version) =
         },
         {
           name: 'tarball',
-          image: golang,
-          pull: 'always',
+          image: 'golang:1.12',
           commands: [
             'tar -cvzf release/' + name + '_' + os + '_' + arch + '.tar.gz -C release/' + os + '/' + arch + ' ' + name,
             'sha256sum release/' + name + '_' + os + '_' + arch + '.tar.gz > release/' + name + '_' + os + '_' + arch + '.tar.gz.sha256'
@@ -138,7 +116,6 @@ local golang_image(os, version) =
         {
           name: 'gpgsign',
           image: 'plugins/gpgsign',
-          pull: 'always',
           settings: {
             files: [
               'release/*.tar.gz',
@@ -154,7 +131,6 @@ local golang_image(os, version) =
         {
           name: 'github',
           image: 'plugins/github-release',
-          pull: 'always',
           settings: {
             files: [
               'release/*.tar.gz',
@@ -175,8 +151,7 @@ local golang_image(os, version) =
           'refs/pull/**',
         ],
       },
-      depends_on: [test_pipeline_name],
-      volumes: if is_windows then [{ name: windows_pipe_volume, host: { path: windows_pipe } }],
+      depends_on: [test_pipeline],
     },
 
   notifications(os='linux', arch='amd64', version='', depends_on=[])::
@@ -191,8 +166,7 @@ local golang_image(os, version) =
       steps: [
         {
           name: 'manifest',
-          image: 'plugins/manifest',
-          pull: 'always',
+          image: 'plugins/manifest:latest',
           settings: {
             username: { from_secret: 'docker_username' },
             password: { from_secret: 'docker_password' },
@@ -203,7 +177,6 @@ local golang_image(os, version) =
         {
           name: 'microbadger',
           image: 'plugins/webhook',
-          pull: 'always',
           settings: {
             url: { from_secret: 'microbadger_url' },
           },

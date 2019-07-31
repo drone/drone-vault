@@ -8,7 +8,7 @@ LABEL maintainer="Drone.IO Community <drone-dev@googlegroups.com>" \
 EXPOSE 3000
 ENV GODEBUG netdns=go
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates curl
 
 ADD release/linux/arm/drone-vault-secrets /bin/
 ENTRYPOINT ["/bin/drone-vault-secrets"]

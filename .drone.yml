@@ -8,23 +8,17 @@ platform:
 
 steps:
 - name: vet
-  pull: always
-  image: golang:1.11
+  image: golang:1.12
   commands:
   - go vet ./...
-  environment:
-    GO111MODULE: on
   volumes:
   - name: gopath
     path: /go
 
 - name: test
-  pull: always
-  image: golang:1.11
+  image: golang:1.12
   commands:
   - go test -cover ./...
-  environment:
-    GO111MODULE: on
   volumes:
   - name: gopath
     path: /go
@@ -36,8 +30,8 @@ volumes:
 trigger:
   ref:
   - refs/heads/master
-  - "refs/tags/**"
-  - "refs/pull/**"
+  - refs/tags/**
+  - refs/pull/**
 
 ---
 kind: pipeline
@@ -49,19 +43,15 @@ platform:
 
 steps:
 - name: build
-  pull: always
-  image: golang:1.11
+  image: golang:1.12
   commands:
   - go build -v -a -tags netgo -o release/linux/amd64/drone-vault-secrets ./cmd/drone-vault-secrets
   environment:
     CGO_ENABLED: 0
-    GO111MODULE: on
 
 - name: dryrun
-  pull: always
   image: plugins/docker:linux-amd64
   settings:
-    daemon_off: false
     dockerfile: docker/Dockerfile.linux.amd64
     dry_run: true
     password:
@@ -75,12 +65,10 @@ steps:
     - pull_request
 
 - name: publish
-  pull: always
   image: plugins/docker:linux-amd64
   settings:
     auto_tag: true
     auto_tag_suffix: linux-amd64
-    daemon_off: false
     dockerfile: docker/Dockerfile.linux.amd64
     password:
       from_secret: docker_password
@@ -93,22 +81,20 @@ steps:
       - pull_request
 
 - name: tarball
-  pull: always
-  image: golang:1.11
+  image: golang:1.12
   commands:
   - tar -cvzf release/drone-vault-secrets_linux_amd64.tar.gz -C release/linux/amd64 drone-vault-secrets
-  - "sha256sum release/drone-vault-secrets_linux_amd64.tar.gz > release/drone-vault-secrets_linux_amd64.tar.gz.sha256"
+  - sha256sum release/drone-vault-secrets_linux_amd64.tar.gz > release/drone-vault-secrets_linux_amd64.tar.gz.sha256
   when:
     event:
     - tag
 
 - name: gpgsign
-  pull: always
   image: plugins/gpgsign
   settings:
     files:
-    - "release/*.tar.gz"
-    - "release/*.tar.gz.sha256"
+    - release/*.tar.gz
+    - release/*.tar.gz.sha256
     key:
       from_secret: gpgsign_key
     passphrase:
@@ -118,13 +104,12 @@ steps:
     - tag
 
 - name: github
-  pull: always
   image: plugins/github-release
   settings:
     files:
-    - "release/*.tar.gz"
-    - "release/*.tar.gz.sha256"
-    - "release/*.tar.gz.asc"
+    - release/*.tar.gz
+    - release/*.tar.gz.sha256
+    - release/*.tar.gz.asc
     token:
       from_secret: github_token
   when:
@@ -134,8 +119,8 @@ steps:
 trigger:
   ref:
   - refs/heads/master
-  - "refs/tags/**"
-  - "refs/pull/**"
+  - refs/tags/**
+  - refs/pull/**
 
 depends_on:
 - testing
@@ -150,19 +135,15 @@ platform:
 
 steps:
 - name: build
-  pull: always
-  image: golang:1.11
+  image: golang:1.12
   commands:
   - go build -v -a -tags netgo -o release/linux/arm64/drone-vault-secrets ./cmd/drone-vault-secrets
   environment:
     CGO_ENABLED: 0
-    GO111MODULE: on
 
 - name: dryrun
-  pull: always
   image: plugins/docker:linux-arm64
   settings:
-    daemon_off: false
     dockerfile: docker/Dockerfile.linux.arm64
     dry_run: true
     password:
@@ -176,12 +157,10 @@ steps:
     - pull_request
 
 - name: publish
-  pull: always
   image: plugins/docker:linux-arm64
   settings:
     auto_tag: true
     auto_tag_suffix: linux-arm64
-    daemon_off: false
     dockerfile: docker/Dockerfile.linux.arm64
     password:
       from_secret: docker_password
@@ -194,22 +173,20 @@ steps:
       - pull_request
 
 - name: tarball
-  pull: always
-  image: golang:1.11
+  image: golang:1.12
   commands:
   - tar -cvzf release/drone-vault-secrets_linux_arm64.tar.gz -C release/linux/arm64 drone-vault-secrets
-  - "sha256sum release/drone-vault-secrets_linux_arm64.tar.gz > release/drone-vault-secrets_linux_arm64.tar.gz.sha256"
+  - sha256sum release/drone-vault-secrets_linux_arm64.tar.gz > release/drone-vault-secrets_linux_arm64.tar.gz.sha256
   when:
     event:
     - tag
 
 - name: gpgsign
-  pull: always
   image: plugins/gpgsign
   settings:
     files:
-    - "release/*.tar.gz"
-    - "release/*.tar.gz.sha256"
+    - release/*.tar.gz
+    - release/*.tar.gz.sha256
     key:
       from_secret: gpgsign_key
     passphrase:
@@ -219,13 +196,12 @@ steps:
     - tag
 
 - name: github
-  pull: always
   image: plugins/github-release
   settings:
     files:
-    - "release/*.tar.gz"
-    - "release/*.tar.gz.sha256"
-    - "release/*.tar.gz.asc"
+    - release/*.tar.gz
+    - release/*.tar.gz.sha256
+    - release/*.tar.gz.asc
     token:
       from_secret: github_token
   when:
@@ -235,8 +211,8 @@ steps:
 trigger:
   ref:
   - refs/heads/master
-  - "refs/tags/**"
-  - "refs/pull/**"
+  - refs/tags/**
+  - refs/pull/**
 
 depends_on:
 - testing
@@ -251,19 +227,15 @@ platform:
 
 steps:
 - name: build
-  pull: always
-  image: golang:1.11
+  image: golang:1.12
   commands:
   - go build -v -a -tags netgo -o release/linux/arm/drone-vault-secrets ./cmd/drone-vault-secrets
   environment:
     CGO_ENABLED: 0
-    GO111MODULE: on
 
 - name: dryrun
-  pull: always
   image: plugins/docker:linux-arm
   settings:
-    daemon_off: false
     dockerfile: docker/Dockerfile.linux.arm
     dry_run: true
     password:
@@ -277,12 +249,10 @@ steps:
     - pull_request
 
 - name: publish
-  pull: always
   image: plugins/docker:linux-arm
   settings:
     auto_tag: true
     auto_tag_suffix: linux-arm
-    daemon_off: false
     dockerfile: docker/Dockerfile.linux.arm
     password:
       from_secret: docker_password
@@ -295,22 +265,20 @@ steps:
       - pull_request
 
 - name: tarball
-  pull: always
-  image: golang:1.11
+  image: golang:1.12
   commands:
   - tar -cvzf release/drone-vault-secrets_linux_arm.tar.gz -C release/linux/arm drone-vault-secrets
-  - "sha256sum release/drone-vault-secrets_linux_arm.tar.gz > release/drone-vault-secrets_linux_arm.tar.gz.sha256"
+  - sha256sum release/drone-vault-secrets_linux_arm.tar.gz > release/drone-vault-secrets_linux_arm.tar.gz.sha256
   when:
     event:
     - tag
 
 - name: gpgsign
-  pull: always
   image: plugins/gpgsign
   settings:
     files:
-    - "release/*.tar.gz"
-    - "release/*.tar.gz.sha256"
+    - release/*.tar.gz
+    - release/*.tar.gz.sha256
     key:
       from_secret: gpgsign_key
     passphrase:
@@ -320,13 +288,12 @@ steps:
     - tag
 
 - name: github
-  pull: always
   image: plugins/github-release
   settings:
     files:
-    - "release/*.tar.gz"
-    - "release/*.tar.gz.sha256"
-    - "release/*.tar.gz.asc"
+    - release/*.tar.gz
+    - release/*.tar.gz.sha256
+    - release/*.tar.gz.asc
     token:
       from_secret: github_token
   when:
@@ -336,8 +303,8 @@ steps:
 trigger:
   ref:
   - refs/heads/master
-  - "refs/tags/**"
-  - "refs/pull/**"
+  - refs/tags/**
+  - refs/pull/**
 
 depends_on:
 - testing
@@ -352,8 +319,7 @@ platform:
 
 steps:
 - name: manifest
-  pull: always
-  image: plugins/manifest
+  image: plugins/manifest:latest
   settings:
     ignore_missing: true
     password:
@@ -363,7 +329,6 @@ steps:
       from_secret: docker_username
 
 - name: microbadger
-  pull: always
   image: plugins/webhook
   settings:
     url:
@@ -372,7 +337,7 @@ steps:
 trigger:
   ref:
   - refs/heads/master
-  - "refs/tags/**"
+  - refs/tags/**
 
 depends_on:
 - linux-amd64
