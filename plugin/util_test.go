@@ -9,6 +9,41 @@ import (
 	"testing"
 )
 
+func TestExtractBranches(t *testing.T) {
+	tests := []struct {
+		params   map[string]string
+		patterns []string
+	}{
+		{
+			params:   map[string]string{"X-Drone-Branches": ""},
+			patterns: nil,
+		},
+		{
+			params:   map[string]string{"X-Drone-Branches": "master"},
+			patterns: []string{"master"},
+		},
+		{
+			params:   map[string]string{"X-Drone-Branches": "master,development"},
+			patterns: []string{"master", "development"},
+		},
+		{
+			params:   map[string]string{"x-drone-branches": "master,development"},
+			patterns: []string{"master", "development"},
+		},
+		{
+			params:   map[string]string{"foo": "bar"},
+			patterns: nil,
+		},
+	}
+
+	for i, test := range tests {
+		got, want := extractBranches(test.params), test.patterns
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("Unexpected results at %d", i)
+		}
+	}
+}
+
 func TestExtractRepos(t *testing.T) {
 	tests := []struct {
 		params   map[string]string

@@ -44,6 +44,7 @@ func TestPlugin(t *testing.T) {
 		Name: "username",
 		Build: drone.Build{
 			Event: "push",
+			Target: "master",
 		},
 		Repo: drone.Repo{
 			Slug: "octocat/hello-world",
@@ -68,6 +69,40 @@ func TestPlugin(t *testing.T) {
 	}
 }
 
+func TestPlugin_FilterBranches(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		out, _ := ioutil.ReadFile("testdata/secret.json")
+		w.Write(out)
+	}))
+	defer ts.Close()
+
+	client, _ := api.NewClient(&api.Config{
+		Address:    ts.URL,
+		MaxRetries: 1,
+	})
+
+	req := &secret.Request{
+		Path: "secret/docker",
+		Name: "username",
+		Build: drone.Build{
+			Event: "push",
+			Target: "development",
+		},
+		Repo: drone.Repo{
+			Slug: "octocat/hello-world",
+		},
+	}
+	plugin := New(client)
+	_, err := plugin.Find(noContext, req)
+	if err == nil {
+		t.Errorf("Expect error")
+		return
+	}
+	if want, got := err.Error(), "access denied: branch does not match"; got != want {
+		t.Errorf("Want error %q, got %q", want, got)
+	}
+}
+
 func TestPlugin_FilterRepo(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		out, _ := ioutil.ReadFile("testdata/secret.json")
@@ -85,6 +120,7 @@ func TestPlugin_FilterRepo(t *testing.T) {
 		Name: "username",
 		Build: drone.Build{
 			Event: "push",
+			Target: "master",
 		},
 		Repo: drone.Repo{
 			Slug: "spaceghost/hello-world",
@@ -118,6 +154,7 @@ func TestPlugin_FilterEvent(t *testing.T) {
 		Name: "username",
 		Build: drone.Build{
 			Event: "pull_request",
+			Target: "master",
 		},
 		Repo: drone.Repo{
 			Slug: "octocat/hello-world",
@@ -152,6 +189,7 @@ func TestPlugin_NotFound(t *testing.T) {
 		Name: "username",
 		Build: drone.Build{
 			Event: "pull_request",
+			Target: "master",
 		},
 		Repo: drone.Repo{
 			Slug: "octocat/hello-world",
@@ -187,6 +225,7 @@ func TestPlugin_KeyNotFound(t *testing.T) {
 		Name: "token",
 		Build: drone.Build{
 			Event: "push",
+			Target: "master",
 		},
 		Repo: drone.Repo{
 			Slug: "octocat/hello-world",

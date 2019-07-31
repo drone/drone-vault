@@ -6,6 +6,17 @@ package plugin
 
 import "strings"
 
+// helper function extracts the branch filters from the
+// secret payload in key value format.
+func extractBranches(params map[string]string) []string {
+	for key, value := range params {
+		if strings.EqualFold(key, "X-Drone-Branches") {
+			return parseCommaSeparated(value)
+		}
+	}
+	return nil
+}
+
 // helper function extracts the repository filters from the
 // secret payload in key value format.
 func extractRepos(params map[string]string) []string {

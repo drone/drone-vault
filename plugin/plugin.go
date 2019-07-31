@@ -60,6 +60,14 @@ func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, 
 		return nil, errors.New("access denied: repository does not match")
 	}
 
+	// the user can filter out requets based on repository
+	// branch using the X-Drone-Branches secret key. Check
+	// for this user-defined filter logic.
+	branches := extractBranches(params)
+	if !match(req.Build.Target, branches) {
+		return nil, errors.New("access denied: branch does not match")
+	}
+
 	return &drone.Secret{
 		Name: name,
 		Data: value,
