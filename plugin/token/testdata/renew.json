@@ -1,0 +1,14 @@
+{
+  "auth": {
+    "client_token": "8609694a-cdbc-db9b-d345-e782dbb562ed",
+    "policies": [
+      "web",
+      "stage"
+    ],
+    "metadata": {
+      "user": "armon"
+    },
+    "lease_duration": 3600,
+    "renewable": true
+  }
+}
