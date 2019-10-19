@@ -22,6 +22,8 @@ steps:
       from_secret: docker_password
     repo: drone/vault
   when:
+    branch:
+    - master
     event:
     - push
     - tag
@@ -38,6 +40,8 @@ steps:
     username:
       from_secret: docker_username
   when:
+    branch:
+    - master
     event:
     - push
     - tag
@@ -54,6 +58,8 @@ steps:
       from_secret: docker_password
     repo: drone/vault
   when:
+    branch:
+    - master
     event:
     - push
     - tag
@@ -69,6 +75,8 @@ steps:
     password:
       from_secret: docker_password
   when:
+    branch:
+    - master
     event:
     - push
     - tag
