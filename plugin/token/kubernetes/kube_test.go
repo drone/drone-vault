@@ -11,10 +11,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
-	"time"
 
-	"github.com/drone/drone-vault/plugin/token"
-	"github.com/google/go-cmp/cmp"
+	"github.com/hashicorp/vault/api"
 )
 
 var noContext = context.Background()
@@ -29,22 +27,26 @@ func TestLoad(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	got, err := load(ts.URL, "dev-role", "kubernetes", "testdata/token.jwt")
+	client, _ := api.NewClient(nil)
+
+	r := NewRenewer(client, ts.URL, "dev-role", "kubernetes")
+	r.path = "testdata/token.jwt"
+	err := r.Renew(noContext)
 	if err != nil {
 		t.Error(err)
 	}
 
-	want := &token.Token{
-		Token: "62b858f9-529c-6b26-e0b8-0457b6aacdb4",
-		TTL:   time.Duration(2764800000000000),
-	}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Errorf(diff)
+	want := "62b858f9-529c-6b26-e0b8-0457b6aacdb4"
+	got := client.Token()
+	if got != want {
+		t.Errorf("Want token %s, got %s", want, got)
 	}
 }
 
 func TestLoad_FileError(t *testing.T) {
-	_, err := load("http://localhost", "dev-role", "kubernetes", "testdata/does-not-exist.jwt")
+	r := NewRenewer(nil, "http://localhost", "dev-role", "kubernetes")
+	r.path = "testdata/does-not-exist.jwt"
+	err := r.Renew(noContext)
 	if _, ok := err.(*os.PathError); !ok {
 		t.Errorf("Expect PathError got %v", err)
 	}
@@ -59,7 +61,9 @@ func TestLoad_RequestError(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	_, err := load(ts.URL, "dev-role", "kubernetes", "testdata/token.jwt")
+	r := NewRenewer(nil, ts.URL, "dev-role", "kubernetes")
+	r.path = "testdata/token.jwt"
+	err := r.Renew(noContext)
 	if err == nil {
 		t.Errorf("Expect request error")
 	}

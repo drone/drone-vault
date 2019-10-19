@@ -74,21 +74,8 @@ func main() {
 		logrus.Fatalln(err)
 	}
 
-	// the token can be fetched at runtime if an auth
-	// provider is configured. otherwise, the user must
-	// specify a VAULT_TOKEN.
-	if spec.VaultAuthType == kubernetes.Name {
-		token, err := kubernetes.Load(
-			spec.VaultAddr,
-			spec.VaultKubeRole,
-			spec.VaultAuthMount,
-		)
-		if err != nil {
-			logrus.Fatalln(err)
-		}
-		client.SetToken(token.Token)
-		spec.VaultTTL = token.TTL
-	}
+	// global context
+	ctx := context.Background()
 
 	http.Handle("/", secret.Handler(
 		spec.Secret,
@@ -97,11 +84,34 @@ func main() {
 	))
 
 	var g errgroup.Group
-	g.Go(func() error {
-		ctx := context.Background()
-		return token.NewRenewer(
-			client, spec.VaultTTL, spec.VaultRenew).Run(ctx)
-	})
+
+	// the token can be fetched at runtime if an auth
+	// provider is configured. otherwise, the user must
+	// specify a VAULT_TOKEN.
+	if spec.VaultAuthType == kubernetes.Name {
+		renewer := kubernetes.NewRenewer(
+			client,
+			spec.VaultAddr,
+			spec.VaultKubeRole,
+			spec.VaultAuthMount,
+		)
+		err := renewer.Renew(ctx)
+		if err != nil {
+			logrus.Fatalln(err)
+		}
+
+		// the vault token needs to be periodically
+		// refreshed and the kubernetes token has a
+		// max age of 32 days.
+		g.Go(func() error {
+			return renewer.Run(ctx, spec.VaultRenew)
+		})
+	} else {
+		g.Go(func() error {
+			return token.NewRenewer(
+				client, spec.VaultTTL, spec.VaultRenew).Run(ctx)
+		})
+	}
 
 	g.Go(func() error {
 		logrus.Infof("server listening on address %s", spec.Address)

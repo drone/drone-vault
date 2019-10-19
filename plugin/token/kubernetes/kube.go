@@ -5,18 +5,20 @@
 package kubernetes
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"time"
 
-	"github.com/drone/drone-vault/plugin/token"
+	"github.com/hashicorp/vault/api"
+	"github.com/sirupsen/logrus"
 )
 
 // Name that identifies the auth method.
 const Name = "kubernetes"
 
 // kubernetes token file path.
-const path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+const defaultPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 
 type (
 	// kubernetes authorization provider request.
@@ -32,39 +34,81 @@ type (
 			Lease int    `json:"lease_duration"`
 		}
 	}
+
+	// Renewer renews the Kubernetes token.
+	Renewer struct {
+		client *api.Client
+
+		address string
+		mount   string
+		path    string
+		role    string
+	}
 )
 
-// Load loads the Vault token using the Kubernetes
-// authorization provider.
-func Load(address, role, mount string) (*token.Token, error) {
-	return load(address, role, mount, path)
+// NewRenewer returns a new Kubernetes token provider
+// that renews the token on expiration.
+func NewRenewer(client *api.Client, address, role, mount string) *Renewer {
+	return &Renewer{
+		address: address,
+		client:  client,
+		mount:   mount,
+		role:    role,
+		path:    defaultPath,
+	}
 }
 
-func load(address, role, mount, tokenpath string) (*token.Token, error) {
+// Renew renews the Vault token.
+func (r *Renewer) Renew(ctx context.Context) error {
 	// create the vault endpoint address.
-	endpoint := fmt.Sprintf("%s/v1/auth/%s/login", address, mount)
+	endpoint := fmt.Sprintf("%s/v1/auth/%s/login", r.address, r.mount)
+
+	logrus.WithField("path", r.path).
+		Debugln("kubernetes: reading account token")
 
 	// reads the jwt token mounted inside the container.
-	b, err := ioutil.ReadFile(tokenpath)
+	b, err := ioutil.ReadFile(r.path)
 	if err != nil {
-		return nil, err
+		logrus.WithError(err).
+			WithField("path", r.path).
+			Errorln("kubernetes: cannot read account token")
+		return err
 	}
 
 	res := &response{}
 	req := &request{
 		Jwt:  string(b),
-		Role: role,
+		Role: r.role,
 	}
+
+	logrus.WithField("endpoint", endpoint).
+		Debugln("kubernetes: requesting vault token")
 
 	err = post(endpoint, req, res)
 	if err != nil {
-		return nil, err
+		logrus.WithError(err).
+			WithField("endpoint", endpoint).
+			Errorln("kubernetes: cannot request vault token")
+		return err
 	}
 
-	// convert the response to the generic token structure
-	// with the token ttl calculated from the lease.
-	return &token.Token{
-		Token: res.Auth.Token,
-		TTL:   time.Duration(res.Auth.Lease) * time.Second,
-	}, nil
+	r.client.SetToken(res.Auth.Token)
+	ttl := time.Duration(res.Auth.Lease) * time.Second
+
+	logrus.WithField("ttl", ttl).
+		Debugln("kubernetes: token received")
+
+	return nil
+}
+
+// Run performs token renewal at scheduled intervals.
+func (r *Renewer) Run(ctx context.Context, renew time.Duration) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(renew):
+			r.Renew(ctx)
+		}
+	}
 }

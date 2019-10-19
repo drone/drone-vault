@@ -8,16 +8,17 @@ require (
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db
 	github.com/google/go-cmp v0.2.0
 	github.com/hashicorp/errwrap v0.0.0-20180715044906-d6c0cd880357
-	github.com/hashicorp/go-cleanhttp v0.0.0-20171218145408-d5fe4b57a186
+	github.com/hashicorp/go-cleanhttp v0.5.1
 	github.com/hashicorp/go-multierror v0.0.0-20180717150148-3d5d8f294aa0
 	github.com/hashicorp/go-retryablehttp v0.0.0-20180718195005-e651d75abec6
-	github.com/hashicorp/go-rootcerts v0.0.0-20160503143440-6bb64b370b90
+	github.com/hashicorp/go-rootcerts v1.0.0
 	github.com/hashicorp/go-sockaddr v0.0.0-20180320115054-6d291a969b86
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
+	github.com/hashicorp/nomad/api v0.0.0-20191018195330-75acbccf8e5e
 	github.com/hashicorp/vault v0.10.4
 	github.com/joho/godotenv v1.2.0
 	github.com/kelseyhightower/envconfig v1.3.0
-	github.com/mitchellh/go-homedir v0.0.0-20180801233206-58046073cbff
+	github.com/mitchellh/go-homedir v1.0.0
 	github.com/mitchellh/mapstructure v0.0.0-20180715050151-f15292f7a699
 	github.com/ryanuber/go-glob v0.0.0-20160226084822-572520ed46db
 	github.com/sirupsen/logrus v1.0.6

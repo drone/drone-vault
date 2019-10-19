@@ -31,7 +31,7 @@ func NewRenewer(client *api.Client, ttl, renew time.Duration) *Renewer {
 // Run performs token renewal at scheduled intervals.
 func (r *Renewer) Run(ctx context.Context) error {
 	if r.renew == 0 || r.ttl == 0 {
-		logrus.Debugf("vault: token rereshing disabled")
+		logrus.Debugf("vault: token refreshing disabled")
 		return nil
 	}
 
