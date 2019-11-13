@@ -27,6 +27,6 @@ $ docker run -d \
 Update your runner configuration to include the plugin address and the shared secret.
 
 ```text
-DRONE_SECRET_ENDPOINT=http://1.2.3.4:3000
-DRONE_SECRET_SECRET=bea26a2221fd8090ea38720fc445eca6
+DRONE_SECRET_PLUGIN_ENDPOINT=http://1.2.3.4:3000
+DRONE_SECRET_PLUGIN_TOKEN=bea26a2221fd8090ea38720fc445eca6
 ```
