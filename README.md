@@ -24,7 +24,7 @@ $ docker run -d \
   --name=drone-vault drone/vault
 ```
 
-Update your Drone agent configuration to include the plugin address and the shared secret.
+Update your runner configuration to include the plugin address and the shared secret.
 
 ```text
 DRONE_SECRET_ENDPOINT=http://1.2.3.4:3000
