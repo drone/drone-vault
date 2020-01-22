@@ -37,17 +37,17 @@ var envs = []string{
 }
 
 type config struct {
-	Address        string        `envconfig:"DRONE_BIND"`
-	Debug          bool          `envconfig:"DRONE_DEBUG"`
-	Secret         string        `envconfig:"DRONE_SECRET"`
-	VaultAddr      string        `envconfig:"VAULT_ADDR"`
-	VaultRenew     time.Duration `envconfig:"VAULT_TOKEN_RENEWAL"`
-	VaultTTL       time.Duration `envconfig:"VAULT_TOKEN_TTL"`
-	VaultAuthType  string        `envconfig:"VAULT_AUTH_TYPE"`
-	VaultAuthMount string        `envconfig:"VAULT_AUTH_MOUNT_POINT"`
-	VaultRoleID    string	     `envconfig:"VAULT_ROLE_ID"`
-	VaultSecretID  string        `envconfig:"VAULT_SECRET_ID"`
-	VaultKubeRole  string        `envconfig:"VAULT_KUBERNETES_ROLE"`
+	Address            string        `envconfig:"DRONE_BIND"`
+	Debug              bool          `envconfig:"DRONE_DEBUG"`
+	Secret             string        `envconfig:"DRONE_SECRET"`
+	VaultAddr          string        `envconfig:"VAULT_ADDR"`
+	VaultRenew         time.Duration `envconfig:"VAULT_TOKEN_RENEWAL"`
+	VaultTTL           time.Duration `envconfig:"VAULT_TOKEN_TTL"`
+	VaultAuthType      string        `envconfig:"VAULT_AUTH_TYPE"`
+	VaultAuthMount     string        `envconfig:"VAULT_AUTH_MOUNT_POINT"`
+	VaultApproleID     string        `envconfig:"VAULT_APPROLE_ID"`
+	VaultApproleSecret string        `envconfig:"VAULT_APPROLE_SECRET"`
+	VaultKubeRole      string        `envconfig:"VAULT_KUBERNETES_ROLE"`
 }
 
 func main() {
@@ -112,8 +112,8 @@ func main() {
 	} else if spec.VaultAuthType == approle.Name {
 		renewer := approle.NewRenewer(
 			client,
-			spec.VaultRoleID,
-			spec.VaultSecretID,
+			spec.VaultApproleID,
+			spec.VaultApproleSecret,
 			spec.VaultTTL,
 		)
 		err := renewer.Renew(ctx)

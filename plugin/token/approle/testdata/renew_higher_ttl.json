@@ -1,12 +1,10 @@
 {
-  "request_id": "a32f78e2-097d-17dd-c091-02ff795b74f8",
+  "request_id": "e7f7c550-404c-8886-5fba-34ed4aee0e9d",
   "lease_id": "",
   "lease_duration": 0,
   "renewable": false,
   "data": null,
-  "warnings": [
-    "TTL of \"3h21m36s\" exceeded the effective max_ttl of \"3h21m20s\"; TTL value is capped accordingly"
-  ],
+  "warnings": null,
   "auth": {
     "client_token": "s.zREhsyJT79kcuGbfrKsbyo0W",
     "accessor": "5nFvi5KSqWGdmu2plVBqi5wa",
@@ -20,7 +18,7 @@
     },
     "orphan": true,
     "entity_id": "528d462d-4086-1923-4742-042c52038f6c",
-    "lease_duration": 12080,
+    "lease_duration": 2400,
     "renewable": true
   }
 }

@@ -43,6 +43,12 @@ func (r *Renewer) Renew(ctx context.Context) error {
 	// create the vault endpoint address.
 	path := "auth/token/renew"
 
+
+	if r.client.Token() == "" {
+		logrus.Infoln("vault approle: no existing token, fetching one")
+		return r.NewToken(ctx)
+	}
+
 	logrus.Debugln("vault approle: renewing token")
 
 	// Renew
@@ -57,7 +63,7 @@ func (r *Renewer) Renew(ctx context.Context) error {
 		return r.NewToken(ctx)
 	}
 
-	if resp.Auth.LeaseDuration != r.ttl {
+	if resp.Auth.LeaseDuration < r.ttl {
 		logrus.Infoln("vault approle: token could not be renewed for desired ttl")
 		logrus.Infoln("vault approle: will request new token")
 		return r.NewToken(ctx)
@@ -65,12 +71,15 @@ func (r *Renewer) Renew(ctx context.Context) error {
 
 	if resp == nil {
 		logrus.Errorln("expected a response for login")
+		return nil
 	}
 	if resp.Auth == nil {
 		logrus.Errorln("expected auth object from response")
+		return nil
 	}
 	if resp.Auth.ClientToken == "" {
 		logrus.Errorln("expected a client token")
+		return nil
 	}
 
 	r.client.SetToken(resp.Auth.ClientToken)
@@ -93,17 +102,20 @@ func (r *Renewer) NewToken(ctx context.Context) error {
 			"secret_id": r.secretId,
 		})
 	if err != nil {
-		// t.Fatal(err)
+		logrus.Fatalln(err)
 	}
 
 	if resp == nil {
 		logrus.Errorln("expected a response for login")
+		return nil
 	}
 	if resp.Auth == nil {
 		logrus.Errorln("expected auth object from response")
+		return nil
 	}
 	if resp.Auth.ClientToken == "" {
 		logrus.Errorln("expected a client token")
+		return nil
 	}
 
 	r.client.SetToken(resp.Auth.ClientToken)

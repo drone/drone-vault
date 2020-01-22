@@ -10,6 +10,9 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
+
+	log "github.com/sirupsen/logrus"
 	"net"
 	"net/http"
 	"testing"
@@ -25,6 +28,12 @@ var renewToken = "s.zREhsyJT79kcuGbfrKsbyo0W"
 var newToken = "s.OhZm4kQxf6K45Tg0bKNQbTJD"
 var ttl, _ = time.ParseDuration("1200s")
 
+func TestMain(m *testing.M) {
+	log.SetLevel(log.WarnLevel)
+	os.Exit(m.Run())
+}
+
+// Renew an existing token
 func TestVaultApproleRenew(t *testing.T) {
 	handler := func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path != "/v1/auth/token/renew" {
@@ -40,6 +49,7 @@ func TestVaultApproleRenew(t *testing.T) {
 	config.ConfigureTLS(&tlsConfig)
 
     client, vaultErr := api.NewClient(config)
+    client.SetToken(renewToken)
     if vaultErr != nil {
     	t.Errorf("Can't connect to vault test server\n#{err}")
 	}
@@ -57,6 +67,40 @@ func TestVaultApproleRenew(t *testing.T) {
 	t.Parallel()
 }
 
+// Test first time renew when a token doesn't exist yet
+func TestVaultApproleRenewNoToken(t *testing.T) {
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path != "/v1/auth/approle/login" {
+			t.Errorf("Invalid path, %v", req.URL.Path)
+		}
+		data, _ := ioutil.ReadFile("testdata/new_token.json")
+		w.Write(data)
+	}
+	config, listener := testHTTPServer(t, http.HandlerFunc(handler))
+	defer listener.Close()
+
+	tlsConfig := api.TLSConfig{Insecure: true}
+	config.ConfigureTLS(&tlsConfig)
+
+	client, vaultErr := api.NewClient(config)
+	if vaultErr != nil {
+		t.Errorf("Can't connect to vault test server\n#{err}")
+	}
+
+	r := NewRenewer(client, roleId, secretId, ttl)
+	err := r.Renew(noContext)
+
+	if err != nil {
+		t.Errorf("ERROR: %v", err)
+	}
+	if r.client.Token() != newToken {
+		t.Errorf("ERROR: expected token %v, got token %v", newToken, r.client.Token())
+	}
+
+	t.Parallel()
+}
+
+// Generate a new token
 func TestVaultApproleNewToken(t *testing.T) {
 	handler := func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path != "/v1/auth/approle/login" {
@@ -89,11 +133,12 @@ func TestVaultApproleNewToken(t *testing.T) {
 	t.Parallel()
 }
 
-func TestVaultApproleRenewPartial(t *testing.T) {
+// Test logic when returned TTL is higher than requested
+func TestVaultApproleRenewHigherTTL(t *testing.T) {
 	handler := func(w http.ResponseWriter, req *http.Request) {
 		var data []byte
 		if req.URL.Path == "/v1/auth/token/renew" {
-			data, _ = ioutil.ReadFile("testdata/renew_warning.json")
+			data, _ = ioutil.ReadFile("testdata/renew_higher_ttl.json")
 		} else if req.URL.Path == "/v1/auth/approle/login" {
 			data, _ = ioutil.ReadFile("testdata/new_token.json")
 		} else{
@@ -109,6 +154,47 @@ func TestVaultApproleRenewPartial(t *testing.T) {
 	config.ConfigureTLS(&tlsConfig)
 
 	client, vaultErr := api.NewClient(config)
+	client.SetToken(renewToken)
+	if vaultErr != nil {
+		t.Errorf("Can't connect to vault test server\n#{err}")
+	}
+
+	r := NewRenewer(client, roleId, secretId, ttl)
+	err := r.Renew(noContext)
+
+	if err != nil {
+		t.Errorf("ERROR: %v", err)
+	}
+	if r.client.Token() != renewToken {
+		t.Errorf("ERROR: expected token %v, got token %v", renewToken, r.client.Token())
+	}
+
+	t.Parallel()
+}
+
+// Test logic when returned TTL is lower than requested
+// Expect a new token to be generated
+func TestVaultApproleRenewLowerTTL(t *testing.T) {
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		var data []byte
+		if req.URL.Path == "/v1/auth/token/renew" {
+			data, _ = ioutil.ReadFile("testdata/renew_lower_ttl.json")
+		} else if req.URL.Path == "/v1/auth/approle/login" {
+			data, _ = ioutil.ReadFile("testdata/new_token.json")
+		} else{
+			t.Errorf("Invalid path, %v", req.URL.Path)
+		}
+
+		w.Write(data)
+	}
+	config, listener := testHTTPServer(t, http.HandlerFunc(handler))
+	defer listener.Close()
+
+	tlsConfig := api.TLSConfig{Insecure: true}
+	config.ConfigureTLS(&tlsConfig)
+
+	client, vaultErr := api.NewClient(config)
+	client.SetToken(renewToken)
 	if vaultErr != nil {
 		t.Errorf("Can't connect to vault test server\n#{err}")
 	}
