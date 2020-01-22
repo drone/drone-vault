@@ -1,0 +1,26 @@
+{
+  "request_id": "a32f78e2-097d-17dd-c091-02ff795b74f8",
+  "lease_id": "",
+  "lease_duration": 0,
+  "renewable": false,
+  "data": null,
+  "warnings": [
+    "TTL of \"3h21m36s\" exceeded the effective max_ttl of \"3h21m20s\"; TTL value is capped accordingly"
+  ],
+  "auth": {
+    "client_token": "s.zREhsyJT79kcuGbfrKsbyo0W",
+    "accessor": "5nFvi5KSqWGdmu2plVBqi5wa",
+    "policies": null,
+    "token_policies": [
+      "default"
+    ],
+    "identity_policies": null,
+    "metadata": {
+      "role_name": "my-role"
+    },
+    "orphan": true,
+    "entity_id": "528d462d-4086-1923-4742-042c52038f6c",
+    "lease_duration": 12080,
+    "renewable": true
+  }
+}

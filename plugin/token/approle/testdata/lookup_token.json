@@ -1,0 +1,30 @@
+{
+  "request_id": "15807da0-9ca5-03b2-c080-1b0d5a0cb0f9",
+  "lease_id": "",
+  "lease_duration": 0,
+  "renewable": false,
+  "data": {
+    "accessor": "5nFvi5KSqWGdmu2plVBqi5wa",
+    "creation_time": 1579633491,
+    "creation_ttl": 1200,
+    "display_name": "approle",
+    "entity_id": "528d462d-4086-1923-4742-042c52038f6c",
+    "expire_time": "2020-01-21T19:24:51.331917977Z",
+    "explicit_max_ttl": 0,
+    "id": "s.zREhsyJT79kcuGbfrKsbyo0W",
+    "issue_time": "2020-01-21T19:04:51.331917711Z",
+    "meta": {
+      "role_name": "my-role"
+    },
+    "num_uses": 0,
+    "orphan": true,
+    "path": "auth/approle/login",
+    "policies": [
+      "default"
+    ],
+    "renewable": true,
+    "ttl": 1158,
+    "type": "service"
+  },
+  "warnings": null
+}
