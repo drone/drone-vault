@@ -41,8 +41,18 @@ func TestVaultApproleRenew(t *testing.T) {
 		data, _ := ioutil.ReadFile("testdata/renew_token.json")
 		w.Write(data)
 	}
-	client, ts := newClientAndServer(t, http.HandlerFunc(handler))
+	ts := httptest.NewServer(http.HandlerFunc(handler))
 	defer ts.Close()
+
+	config := api.DefaultConfig()
+	config.Address = ts.URL
+	tlsConfig := api.TLSConfig{Insecure: true}
+	config.ConfigureTLS(&tlsConfig)
+
+	client, vaultErr := api.NewClient(config)
+	if vaultErr != nil {
+		t.Errorf("Can't connect to vault test server\n#{err}")
+	}
 	client.SetToken(renewToken)
 
 	r := NewRenewer(client, roleId, secretId, ttl)
@@ -67,8 +77,18 @@ func TestVaultApproleRenewNoToken(t *testing.T) {
 		data, _ := ioutil.ReadFile("testdata/new_token.json")
 		w.Write(data)
 	}
-	client, ts := newClientAndServer(t, http.HandlerFunc(handler))
+	ts := httptest.NewServer(http.HandlerFunc(handler))
 	defer ts.Close()
+
+	config := api.DefaultConfig()
+	config.Address = ts.URL
+	tlsConfig := api.TLSConfig{Insecure: true}
+	config.ConfigureTLS(&tlsConfig)
+
+	client, vaultErr := api.NewClient(config)
+	if vaultErr != nil {
+		t.Errorf("Can't connect to vault test server\n#{err}")
+	}
 
 	r := NewRenewer(client, roleId, secretId, ttl)
 	err := r.Renew(noContext)
@@ -92,8 +112,18 @@ func TestVaultApproleNewToken(t *testing.T) {
 		data, _ := ioutil.ReadFile("testdata/new_token.json")
 		w.Write(data)
 	}
-	client, ts := newClientAndServer(t, http.HandlerFunc(handler))
+	ts := httptest.NewServer(http.HandlerFunc(handler))
 	defer ts.Close()
+
+	config := api.DefaultConfig()
+	config.Address = ts.URL
+	tlsConfig := api.TLSConfig{Insecure: true}
+	config.ConfigureTLS(&tlsConfig)
+
+	client, vaultErr := api.NewClient(config)
+	if vaultErr != nil {
+		t.Errorf("Can't connect to vault test server\n#{err}")
+	}
 	client.SetToken(renewToken)
 
 	r := NewRenewer(client, roleId, secretId, ttl)
@@ -123,8 +153,18 @@ func TestVaultApproleRenewHigherTTL(t *testing.T) {
 
 		w.Write(data)
 	}
-	client, ts := newClientAndServer(t, http.HandlerFunc(handler))
+	ts := httptest.NewServer(http.HandlerFunc(handler))
 	defer ts.Close()
+
+	config := api.DefaultConfig()
+	config.Address = ts.URL
+	tlsConfig := api.TLSConfig{Insecure: true}
+	config.ConfigureTLS(&tlsConfig)
+
+	client, vaultErr := api.NewClient(config)
+	if vaultErr != nil {
+		t.Errorf("Can't connect to vault test server\n#{err}")
+	}
 	client.SetToken(renewToken)
 
 	r := NewRenewer(client, roleId, secretId, ttl)
@@ -155,8 +195,18 @@ func TestVaultApproleRenewLowerTTL(t *testing.T) {
 
 		w.Write(data)
 	}
-	client, ts := newClientAndServer(t, http.HandlerFunc(handler))
+	ts := httptest.NewServer(http.HandlerFunc(handler))
 	defer ts.Close()
+
+	config := api.DefaultConfig()
+	config.Address = ts.URL
+	tlsConfig := api.TLSConfig{Insecure: true}
+	config.ConfigureTLS(&tlsConfig)
+
+	client, vaultErr := api.NewClient(config)
+	if vaultErr != nil {
+		t.Errorf("Can't connect to vault test server\n#{err}")
+	}
 	client.SetToken(renewToken)
 
 	r := NewRenewer(client, roleId, secretId, ttl)
@@ -170,20 +220,4 @@ func TestVaultApproleRenewLowerTTL(t *testing.T) {
 	}
 
 	t.Parallel()
-}
-
-func newClientAndServer(t *testing.T, handler http.Handler) (*api.Client, *httptest.Server) {
-	ts := httptest.NewServer(handler)
-
-	config := api.DefaultConfig()
-	config.Address = ts.URL
-	tlsConfig := api.TLSConfig{Insecure: true}
-	config.ConfigureTLS(&tlsConfig)
-
-	client, vaultErr := api.NewClient(config)
-	if vaultErr != nil {
-		t.Errorf("Can't connect to vault test server\n#{err}")
-	}
-
-	return client, ts
 }
