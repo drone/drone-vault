@@ -8,12 +8,11 @@ package approle
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
+	"net/http/httptest"
 	"os"
 
 	log "github.com/sirupsen/logrus"
-	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -42,17 +41,9 @@ func TestVaultApproleRenew(t *testing.T) {
 		data, _ := ioutil.ReadFile("testdata/renew_token.json")
 		w.Write(data)
 	}
-	config, listener := testHTTPServer(t, http.HandlerFunc(handler))
-	defer listener.Close()
-
-	tlsConfig := api.TLSConfig{Insecure: true}
-	config.ConfigureTLS(&tlsConfig)
-
-    client, vaultErr := api.NewClient(config)
-    client.SetToken(renewToken)
-    if vaultErr != nil {
-    	t.Errorf("Can't connect to vault test server\n#{err}")
-	}
+	client, ts := newClientAndServer(t, http.HandlerFunc(handler))
+	defer ts.Close()
+	client.SetToken(renewToken)
 
 	r := NewRenewer(client, roleId, secretId, ttl)
 	err := r.Renew(noContext)
@@ -76,16 +67,8 @@ func TestVaultApproleRenewNoToken(t *testing.T) {
 		data, _ := ioutil.ReadFile("testdata/new_token.json")
 		w.Write(data)
 	}
-	config, listener := testHTTPServer(t, http.HandlerFunc(handler))
-	defer listener.Close()
-
-	tlsConfig := api.TLSConfig{Insecure: true}
-	config.ConfigureTLS(&tlsConfig)
-
-	client, vaultErr := api.NewClient(config)
-	if vaultErr != nil {
-		t.Errorf("Can't connect to vault test server\n#{err}")
-	}
+	client, ts := newClientAndServer(t, http.HandlerFunc(handler))
+	defer ts.Close()
 
 	r := NewRenewer(client, roleId, secretId, ttl)
 	err := r.Renew(noContext)
@@ -109,16 +92,9 @@ func TestVaultApproleNewToken(t *testing.T) {
 		data, _ := ioutil.ReadFile("testdata/new_token.json")
 		w.Write(data)
 	}
-	config, listener := testHTTPServer(t, http.HandlerFunc(handler))
-	defer listener.Close()
-
-	tlsConfig := api.TLSConfig{Insecure: true}
-	config.ConfigureTLS(&tlsConfig)
-
-	client, vaultErr := api.NewClient(config)
-	if vaultErr != nil {
-		t.Errorf("Can't connect to vault test server\n#{err}")
-	}
+	client, ts := newClientAndServer(t, http.HandlerFunc(handler))
+	defer ts.Close()
+	client.SetToken(renewToken)
 
 	r := NewRenewer(client, roleId, secretId, ttl)
 	err := r.NewToken(noContext)
@@ -147,17 +123,9 @@ func TestVaultApproleRenewHigherTTL(t *testing.T) {
 
 		w.Write(data)
 	}
-	config, listener := testHTTPServer(t, http.HandlerFunc(handler))
-	defer listener.Close()
-
-	tlsConfig := api.TLSConfig{Insecure: true}
-	config.ConfigureTLS(&tlsConfig)
-
-	client, vaultErr := api.NewClient(config)
+	client, ts := newClientAndServer(t, http.HandlerFunc(handler))
+	defer ts.Close()
 	client.SetToken(renewToken)
-	if vaultErr != nil {
-		t.Errorf("Can't connect to vault test server\n#{err}")
-	}
 
 	r := NewRenewer(client, roleId, secretId, ttl)
 	err := r.Renew(noContext)
@@ -187,17 +155,9 @@ func TestVaultApproleRenewLowerTTL(t *testing.T) {
 
 		w.Write(data)
 	}
-	config, listener := testHTTPServer(t, http.HandlerFunc(handler))
-	defer listener.Close()
-
-	tlsConfig := api.TLSConfig{Insecure: true}
-	config.ConfigureTLS(&tlsConfig)
-
-	client, vaultErr := api.NewClient(config)
+	client, ts := newClientAndServer(t, http.HandlerFunc(handler))
+	defer ts.Close()
 	client.SetToken(renewToken)
-	if vaultErr != nil {
-		t.Errorf("Can't connect to vault test server\n#{err}")
-	}
 
 	r := NewRenewer(client, roleId, secretId, ttl)
 	err := r.Renew(noContext)
@@ -212,18 +172,18 @@ func TestVaultApproleRenewLowerTTL(t *testing.T) {
 	t.Parallel()
 }
 
-func testHTTPServer(
-	t *testing.T, handler http.Handler) (*api.Config, net.Listener) {
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
-	server := &http.Server{Handler: handler}
-	go server.Serve(ln)
+func newClientAndServer(t *testing.T, handler http.Handler) (*api.Client, *httptest.Server) {
+	ts := httptest.NewServer(handler)
 
 	config := api.DefaultConfig()
-	config.Address = fmt.Sprintf("http://%s", ln.Addr())
+	config.Address = ts.URL
+	tlsConfig := api.TLSConfig{Insecure: true}
+	config.ConfigureTLS(&tlsConfig)
 
-	return config, ln
+	client, vaultErr := api.NewClient(config)
+	if vaultErr != nil {
+		t.Errorf("Can't connect to vault test server\n#{err}")
+	}
+
+	return client, ts
 }
