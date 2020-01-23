@@ -34,22 +34,16 @@ func TestMain(m *testing.M) {
 
 // Renew an existing token
 func TestVaultApproleRenew(t *testing.T) {
-	handler := func(w http.ResponseWriter, req *http.Request) {
-		if req.URL.Path != "/v1/auth/token/renew" {
-			t.Errorf("Invalid path, %v", req.URL.Path)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/auth/token/renew" {
+			t.Errorf("Invalid path, %v", r.URL.Path)
 		}
 		data, _ := ioutil.ReadFile("testdata/renew_token.json")
 		w.Write(data)
-	}
-	ts := httptest.NewServer(http.HandlerFunc(handler))
+	}))
 	defer ts.Close()
 
-	config := api.DefaultConfig()
-	config.Address = ts.URL
-	tlsConfig := api.TLSConfig{Insecure: true}
-	config.ConfigureTLS(&tlsConfig)
-
-	client, vaultErr := api.NewClient(config)
+	client, vaultErr := api.NewClient(&api.Config{Address: ts.URL})
 	if vaultErr != nil {
 		t.Errorf("Can't connect to vault test server\n#{err}")
 	}
@@ -62,7 +56,7 @@ func TestVaultApproleRenew(t *testing.T) {
 		t.Error(err)
 	}
 	if r.client.Token() != renewToken {
-		t.Errorf("ERROR: expected token %v, got token %v", renewToken, r.client.Token())
+		t.Errorf("expected token %v, got token %v", renewToken, r.client.Token())
 	}
 
 	t.Parallel()
@@ -70,22 +64,16 @@ func TestVaultApproleRenew(t *testing.T) {
 
 // Test first time renew when a token doesn't exist yet
 func TestVaultApproleRenewNoToken(t *testing.T) {
-	handler := func(w http.ResponseWriter, req *http.Request) {
-		if req.URL.Path != "/v1/auth/approle/login" {
-			t.Errorf("Invalid path, %v", req.URL.Path)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/auth/approle/login" {
+			t.Errorf("Invalid path, %v", r.URL.Path)
 		}
 		data, _ := ioutil.ReadFile("testdata/new_token.json")
 		w.Write(data)
-	}
-	ts := httptest.NewServer(http.HandlerFunc(handler))
+	}))
 	defer ts.Close()
 
-	config := api.DefaultConfig()
-	config.Address = ts.URL
-	tlsConfig := api.TLSConfig{Insecure: true}
-	config.ConfigureTLS(&tlsConfig)
-
-	client, vaultErr := api.NewClient(config)
+	client, vaultErr := api.NewClient(&api.Config{Address: ts.URL})
 	if vaultErr != nil {
 		t.Errorf("Can't connect to vault test server\n#{err}")
 	}
@@ -97,7 +85,7 @@ func TestVaultApproleRenewNoToken(t *testing.T) {
 		t.Error(err)
 	}
 	if r.client.Token() != newToken {
-		t.Errorf("ERROR: expected token %v, got token %v", newToken, r.client.Token())
+		t.Errorf("expected token %v, got token %v", newToken, r.client.Token())
 	}
 
 	t.Parallel()
@@ -105,22 +93,16 @@ func TestVaultApproleRenewNoToken(t *testing.T) {
 
 // Generate a new token
 func TestVaultApproleNewToken(t *testing.T) {
-	handler := func(w http.ResponseWriter, req *http.Request) {
-		if req.URL.Path != "/v1/auth/approle/login" {
-			t.Errorf("Invalid path, %v", req.URL.Path)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/auth/approle/login" {
+			t.Errorf("Invalid path, %v", r.URL.Path)
 		}
 		data, _ := ioutil.ReadFile("testdata/new_token.json")
 		w.Write(data)
-	}
-	ts := httptest.NewServer(http.HandlerFunc(handler))
+	}))
 	defer ts.Close()
 
-	config := api.DefaultConfig()
-	config.Address = ts.URL
-	tlsConfig := api.TLSConfig{Insecure: true}
-	config.ConfigureTLS(&tlsConfig)
-
-	client, vaultErr := api.NewClient(config)
+	client, vaultErr := api.NewClient(&api.Config{Address: ts.URL})
 	if vaultErr != nil {
 		t.Errorf("Can't connect to vault test server\n#{err}")
 	}
@@ -133,7 +115,7 @@ func TestVaultApproleNewToken(t *testing.T) {
 		t.Error(err)
 	}
 	if r.client.Token() != newToken {
-		t.Errorf("ERROR: expected token %v, got token %v", newToken, r.client.Token())
+		t.Errorf("expected token %v, got token %v", newToken, r.client.Token())
 	}
 
 	t.Parallel()
@@ -141,27 +123,20 @@ func TestVaultApproleNewToken(t *testing.T) {
 
 // Test logic when returned TTL is higher than requested
 func TestVaultApproleRenewHigherTTL(t *testing.T) {
-	handler := func(w http.ResponseWriter, req *http.Request) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var data []byte
-		if req.URL.Path == "/v1/auth/token/renew" {
+		if r.URL.Path == "/v1/auth/token/renew" {
 			data, _ = ioutil.ReadFile("testdata/renew_higher_ttl.json")
-		} else if req.URL.Path == "/v1/auth/approle/login" {
+		} else if r.URL.Path == "/v1/auth/approle/login" {
 			data, _ = ioutil.ReadFile("testdata/new_token.json")
 		} else{
-			t.Errorf("Invalid path, %v", req.URL.Path)
+			t.Errorf("Invalid path, %v", r.URL.Path)
 		}
-
 		w.Write(data)
-	}
-	ts := httptest.NewServer(http.HandlerFunc(handler))
+	}))
 	defer ts.Close()
 
-	config := api.DefaultConfig()
-	config.Address = ts.URL
-	tlsConfig := api.TLSConfig{Insecure: true}
-	config.ConfigureTLS(&tlsConfig)
-
-	client, vaultErr := api.NewClient(config)
+	client, vaultErr := api.NewClient(&api.Config{Address: ts.URL})
 	if vaultErr != nil {
 		t.Errorf("Can't connect to vault test server\n#{err}")
 	}
@@ -174,7 +149,7 @@ func TestVaultApproleRenewHigherTTL(t *testing.T) {
 		t.Error(err)
 	}
 	if r.client.Token() != renewToken {
-		t.Errorf("ERROR: expected token %v, got token %v", renewToken, r.client.Token())
+		t.Errorf("expected token %v, got token %v", renewToken, r.client.Token())
 	}
 
 	t.Parallel()
@@ -183,27 +158,20 @@ func TestVaultApproleRenewHigherTTL(t *testing.T) {
 // Test logic when returned TTL is lower than requested
 // Expect a new token to be generated
 func TestVaultApproleRenewLowerTTL(t *testing.T) {
-	handler := func(w http.ResponseWriter, req *http.Request) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var data []byte
-		if req.URL.Path == "/v1/auth/token/renew" {
+		if r.URL.Path == "/v1/auth/token/renew" {
 			data, _ = ioutil.ReadFile("testdata/renew_lower_ttl.json")
-		} else if req.URL.Path == "/v1/auth/approle/login" {
+		} else if r.URL.Path == "/v1/auth/approle/login" {
 			data, _ = ioutil.ReadFile("testdata/new_token.json")
 		} else{
-			t.Errorf("Invalid path, %v", req.URL.Path)
+			t.Errorf("Invalid path, %v", r.URL.Path)
 		}
-
 		w.Write(data)
-	}
-	ts := httptest.NewServer(http.HandlerFunc(handler))
+	}))
 	defer ts.Close()
 
-	config := api.DefaultConfig()
-	config.Address = ts.URL
-	tlsConfig := api.TLSConfig{Insecure: true}
-	config.ConfigureTLS(&tlsConfig)
-
-	client, vaultErr := api.NewClient(config)
+	client, vaultErr := api.NewClient(&api.Config{Address: ts.URL})
 	if vaultErr != nil {
 		t.Errorf("Can't connect to vault test server\n#{err}")
 	}
@@ -216,7 +184,7 @@ func TestVaultApproleRenewLowerTTL(t *testing.T) {
 		t.Error(err)
 	}
 	if r.client.Token() != newToken {
-		t.Errorf("ERROR: expected token %v, got token %v", newToken, r.client.Token())
+		t.Errorf("expected token %v, got token %v", newToken, r.client.Token())
 	}
 
 	t.Parallel()
