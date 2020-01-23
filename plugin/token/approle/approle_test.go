@@ -59,7 +59,7 @@ func TestVaultApproleRenew(t *testing.T) {
 	err := r.Renew(noContext)
 
 	if err != nil {
-		t.Errorf("ERROR: %v", err)
+		t.Error(err)
 	}
 	if r.client.Token() != renewToken {
 		t.Errorf("ERROR: expected token %v, got token %v", renewToken, r.client.Token())
@@ -94,7 +94,7 @@ func TestVaultApproleRenewNoToken(t *testing.T) {
 	err := r.Renew(noContext)
 
 	if err != nil {
-		t.Errorf("ERROR: %v", err)
+		t.Error(err)
 	}
 	if r.client.Token() != newToken {
 		t.Errorf("ERROR: expected token %v, got token %v", newToken, r.client.Token())
@@ -130,7 +130,7 @@ func TestVaultApproleNewToken(t *testing.T) {
 	err := r.NewToken(noContext)
 
 	if err != nil {
-		t.Errorf("ERROR: %v", err)
+		t.Error(err)
 	}
 	if r.client.Token() != newToken {
 		t.Errorf("ERROR: expected token %v, got token %v", newToken, r.client.Token())
@@ -171,7 +171,7 @@ func TestVaultApproleRenewHigherTTL(t *testing.T) {
 	err := r.Renew(noContext)
 
 	if err != nil {
-		t.Errorf("ERROR: %v", err)
+		t.Error(err)
 	}
 	if r.client.Token() != renewToken {
 		t.Errorf("ERROR: expected token %v, got token %v", renewToken, r.client.Token())
@@ -213,7 +213,7 @@ func TestVaultApproleRenewLowerTTL(t *testing.T) {
 	err := r.Renew(noContext)
 
 	if err != nil {
-		t.Errorf("ERROR: %v", err)
+		t.Error(err)
 	}
 	if r.client.Token() != newToken {
 		t.Errorf("ERROR: expected token %v, got token %v", newToken, r.client.Token())
