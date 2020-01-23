@@ -13,6 +13,7 @@ import (
 	"github.com/drone/drone-vault/plugin"
 	"github.com/drone/drone-vault/plugin/token"
 	"github.com/drone/drone-vault/plugin/token/kubernetes"
+	"github.com/drone/drone-vault/plugin/token/approle"
 
 	"github.com/hashicorp/vault/api"
 	"github.com/kelseyhightower/envconfig"
@@ -36,15 +37,17 @@ var envs = []string{
 }
 
 type config struct {
-	Address        string        `envconfig:"DRONE_BIND"`
-	Debug          bool          `envconfig:"DRONE_DEBUG"`
-	Secret         string        `envconfig:"DRONE_SECRET"`
-	VaultAddr      string        `envconfig:"VAULT_ADDR"`
-	VaultRenew     time.Duration `envconfig:"VAULT_TOKEN_RENEWAL"`
-	VaultTTL       time.Duration `envconfig:"VAULT_TOKEN_TTL"`
-	VaultAuthType  string        `envconfig:"VAULT_AUTH_TYPE"`
-	VaultAuthMount string        `envconfig:"VAULT_AUTH_MOUNT_POINT"`
-	VaultKubeRole  string        `envconfig:"VAULT_KUBERNETES_ROLE"`
+	Address            string        `envconfig:"DRONE_BIND"`
+	Debug              bool          `envconfig:"DRONE_DEBUG"`
+	Secret             string        `envconfig:"DRONE_SECRET"`
+	VaultAddr          string        `envconfig:"VAULT_ADDR"`
+	VaultRenew         time.Duration `envconfig:"VAULT_TOKEN_RENEWAL"`
+	VaultTTL           time.Duration `envconfig:"VAULT_TOKEN_TTL"`
+	VaultAuthType      string        `envconfig:"VAULT_AUTH_TYPE"`
+	VaultAuthMount     string        `envconfig:"VAULT_AUTH_MOUNT_POINT"`
+	VaultApproleID     string        `envconfig:"VAULT_APPROLE_ID"`
+	VaultApproleSecret string        `envconfig:"VAULT_APPROLE_SECRET"`
+	VaultKubeRole      string        `envconfig:"VAULT_KUBERNETES_ROLE"`
 }
 
 func main() {
@@ -103,6 +106,22 @@ func main() {
 		// the vault token needs to be periodically
 		// refreshed and the kubernetes token has a
 		// max age of 32 days.
+		g.Go(func() error {
+			return renewer.Run(ctx, spec.VaultRenew)
+		})
+	} else if spec.VaultAuthType == approle.Name {
+		renewer := approle.NewRenewer(
+			client,
+			spec.VaultApproleID,
+			spec.VaultApproleSecret,
+			spec.VaultTTL,
+		)
+		err := renewer.Renew(ctx)
+		if err != nil {
+			logrus.Fatalln(err)
+		}
+
+		// the vault token needs to be periodically refreshed
 		g.Go(func() error {
 			return renewer.Run(ctx, spec.VaultRenew)
 		})
