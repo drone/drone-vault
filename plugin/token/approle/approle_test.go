@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 // Renew an existing token
 func TestVaultApproleRenew(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/auth/token/renew" {
+		if r.URL.Path != "/v1/auth/token/renew-self" {
 			t.Errorf("Invalid path, %v", r.URL.Path)
 		}
 		data, _ := ioutil.ReadFile("testdata/renew_token.json")
@@ -125,7 +125,7 @@ func TestVaultApproleNewToken(t *testing.T) {
 func TestVaultApproleRenewHigherTTL(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var data []byte
-		if r.URL.Path == "/v1/auth/token/renew" {
+		if r.URL.Path == "/v1/auth/token/renew-self" {
 			data, _ = ioutil.ReadFile("testdata/renew_higher_ttl.json")
 		} else if r.URL.Path == "/v1/auth/approle/login" {
 			data, _ = ioutil.ReadFile("testdata/new_token.json")
@@ -160,7 +160,7 @@ func TestVaultApproleRenewHigherTTL(t *testing.T) {
 func TestVaultApproleRenewLowerTTL(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var data []byte
-		if r.URL.Path == "/v1/auth/token/renew" {
+		if r.URL.Path == "/v1/auth/token/renew-self" {
 			data, _ = ioutil.ReadFile("testdata/renew_lower_ttl.json")
 		} else if r.URL.Path == "/v1/auth/approle/login" {
 			data, _ = ioutil.ReadFile("testdata/new_token.json")

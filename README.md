@@ -24,6 +24,23 @@ $ docker run -d \
   --name=drone-vault drone/vault
 ```
 
+Using approle authentication:
+
+```text
+$ docker run -d \
+  --publish=3000:3000 \
+  --env=DRONE_DEBUG=true \
+  --env=DRONE_SECRET=bea26a2221fd8090ea38720fc445eca6 \
+  --env=VAULT_ADDR=... \
+  --env=VAULT_AUTH_TYPE=approle \
+  --env=VAULT_TOKEN_TTL=72h
+  --env=VAULT_TOKEN_RENEWAL=24h
+  --env=VAULT_APPROLE_ID=... \
+  --env=VAULT_APPROLE_SECRET=... \
+  --restart=always \
+  --name=drone-vault drone/vault
+```
+
 Update your runner configuration to include the plugin address and the shared secret.
 
 ```text

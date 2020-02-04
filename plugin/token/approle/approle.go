@@ -41,7 +41,7 @@ func NewRenewer(client *api.Client, roleId string, secretId string, ttl time.Dur
 // Renew renews the Vault token.
 func (r *Renewer) Renew(ctx context.Context) error {
 	// create the vault endpoint address.
-	path := "auth/token/renew"
+	path := "auth/token/renew-self"
 
 
 	if r.client.Token() == "" {
@@ -55,11 +55,10 @@ func (r *Renewer) Renew(ctx context.Context) error {
 
 	resp, err := r.client.Logical().Write(path,
 		map[string]interface{}{
-			"token": r.client.Token(),
 			"increment": strconv.Itoa(r.ttl),
 		})
 	if err != nil {
-		logrus.Warnln("vault approle: token could not be renewed")
+		logrus.WithError(err).Errorln("vault approle: token could not be renewed")
 		return r.NewToken(ctx)
 	}
 
@@ -86,7 +85,7 @@ func (r *Renewer) Renew(ctx context.Context) error {
 	ttl := time.Duration(resp.Auth.LeaseDuration) * time.Second
 
 	logrus.WithField("ttl", ttl).
-	 	Debugln("approle: token received")
+	 	Debugln("vault approle: existing token valid")
 
 	return nil
 }
@@ -121,7 +120,7 @@ func (r *Renewer) NewToken(ctx context.Context) error {
 	r.client.SetToken(resp.Auth.ClientToken)
 	ttl := time.Duration(resp.Auth.LeaseDuration) * time.Second
 	logrus.WithField("ttl", ttl).
-		Debugln("approle: token received")
+		Debugln("vault approle: token received")
 
 	return nil
 }
