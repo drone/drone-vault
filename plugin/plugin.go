@@ -7,6 +7,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/drone/drone-go/drone"
 	"github.com/drone/drone-go/plugin/secret"
@@ -37,7 +38,7 @@ func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, 
 	// to retrieve the secret at the requested path.
 	params, err := p.find(path)
 	if err != nil {
-		return nil, errors.New("secret not found")
+		return nil, errors.New(fmt.Sprintf("error finding secret: %s", err.Error()))
 	}
 	value, ok := params[name]
 	if !ok {
