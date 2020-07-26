@@ -103,6 +103,9 @@ func (r *Renewer) Renew(ctx context.Context) error {
 
 // Run performs token renewal at scheduled intervals.
 func (r *Renewer) Run(ctx context.Context, renew time.Duration) error {
+	if renew == 0 {
+		renew = time.Hour
+	}
 	for {
 		select {
 		case <-ctx.Done():
