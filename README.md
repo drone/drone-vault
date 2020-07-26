@@ -24,9 +24,26 @@ $ docker run -d \
   --name=drone-vault drone/vault
 ```
 
-Update your Drone agent configuration to include the plugin address and the shared secret.
+Using approle authentication:
 
 ```text
-DRONE_SECRET_ENDPOINT=http://1.2.3.4:3000
-DRONE_SECRET_SECRET=bea26a2221fd8090ea38720fc445eca6
+$ docker run -d \
+  --publish=3000:3000 \
+  --env=DRONE_DEBUG=true \
+  --env=DRONE_SECRET=bea26a2221fd8090ea38720fc445eca6 \
+  --env=VAULT_ADDR=... \
+  --env=VAULT_AUTH_TYPE=approle \
+  --env=VAULT_TOKEN_TTL=72h
+  --env=VAULT_TOKEN_RENEWAL=24h
+  --env=VAULT_APPROLE_ID=... \
+  --env=VAULT_APPROLE_SECRET=... \
+  --restart=always \
+  --name=drone-vault drone/vault
+```
+
+Update your runner configuration to include the plugin address and the shared secret.
+
+```text
+DRONE_SECRET_PLUGIN_ENDPOINT=http://1.2.3.4:3000
+DRONE_SECRET_PLUGIN_TOKEN=bea26a2221fd8090ea38720fc445eca6
 ```
