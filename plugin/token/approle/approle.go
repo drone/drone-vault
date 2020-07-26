@@ -10,6 +10,7 @@ import (
 	"context"
 	"strconv"
 	"time"
+
 	"github.com/hashicorp/vault/api"
 	"github.com/sirupsen/logrus"
 )
@@ -20,7 +21,7 @@ const Name = "approle"
 type (
 	// Renewer renews the Kubernetes token.
 	Renewer struct {
-		client *api.Client
+		client   *api.Client
 		roleId   string
 		secretId string
 		ttl      int
@@ -34,7 +35,7 @@ func NewRenewer(client *api.Client, roleId string, secretId string, ttl time.Dur
 		client:   client,
 		roleId:   roleId,
 		secretId: secretId,
-		ttl: int(ttl.Seconds()),
+		ttl:      int(ttl.Seconds()),
 	}
 }
 
@@ -42,7 +43,6 @@ func NewRenewer(client *api.Client, roleId string, secretId string, ttl time.Dur
 func (r *Renewer) Renew(ctx context.Context) error {
 	// create the vault endpoint address.
 	path := "auth/token/renew-self"
-
 
 	if r.client.Token() == "" {
 		logrus.Infoln("vault approle: no existing token, fetching one")
@@ -85,7 +85,7 @@ func (r *Renewer) Renew(ctx context.Context) error {
 	ttl := time.Duration(resp.Auth.LeaseDuration) * time.Second
 
 	logrus.WithField("ttl", ttl).
-	 	Debugln("vault approle: existing token valid")
+		Debugln("vault approle: existing token valid")
 
 	return nil
 }
@@ -127,6 +127,9 @@ func (r *Renewer) NewToken(ctx context.Context) error {
 
 // Run performs token renewal at scheduled intervals.
 func (r *Renewer) Run(ctx context.Context, renew time.Duration) error {
+	if renew == 0 {
+		renew = time.Hour
+	}
 	for {
 		select {
 		case <-ctx.Done():
