@@ -7,6 +7,8 @@ package plugin
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/drone/drone-go/drone"
 	"github.com/drone/drone-go/plugin/secret"
@@ -33,11 +35,18 @@ func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, 
 		name = "value"
 	}
 
-	// makes an api call to the aws secrets manager and attempts
+	// makes an api call to vault and attempts
 	// to retrieve the secret at the requested path.
 	params, err := p.find(path)
 	if err != nil {
-		return nil, errors.New("secret not found")
+		if err, ok := err.(*api.ResponseError); ok {
+			var builder strings.Builder
+			for _, e := range err.Errors {
+				builder.WriteString(", " + e)
+			}
+			return nil, errors.New(fmt.Sprintf("unexpected response %d from vault: %s", err.StatusCode, builder.String()))
+		}
+		return nil, errors.New(fmt.Sprintf("error finding secret: %s", err.Error()))
 	}
 	value, ok := params[name]
 	if !ok {
