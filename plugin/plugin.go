@@ -195,7 +195,7 @@ func rewritePath(r io.Reader, original string) (isV2 bool, rewritten string, _ e
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(r).Decode(&response); err != nil {
-		return false, original, fmt.Errorf("failed parsing response: %w", err)
+		return false, original, fmt.Errorf("failed parsing response: %v", err)
 	}
 	v, err := strconv.Atoi(response.Data.Options.Version)
 	if err != nil || v != 2 {
