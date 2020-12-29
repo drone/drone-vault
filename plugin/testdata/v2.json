@@ -1,0 +1,74 @@
+[
+  {
+    "mount_data": "{\"request_id\":\"b2f6799d-7a1d-8bdc-ac5f-0c1238c17969\",\"lease_id\":\"\",\"renewable\":false,\"lease_duration\":0,\"data\":{\"accessor\":\"kv_f055aa7b\",\"config\":{\"default_lease_ttl\":0,\"force_no_cache\":false,\"max_lease_ttl\":0},\"description\":\"versioned encrypted key/value storage\",\"local\":false,\"options\":{\"version\":\"2\"},\"path\":\"mount/v2/\",\"seal_wrap\":false,\"type\":\"kv\",\"uuid\":\"eb3b578c-a0bf-2a91-19dc-4155e8ae0116\"},\"wrap_info\":null,\"warnings\":null,\"auth\":null}",
+    "rewritten": "mount/v2/data/bar",
+    "path": "mount/v2/bar",
+    "is_v2": true
+  },
+  {
+    "mount_data": "{\"request_id\":\"85d5a8e6-348c-a9e5-7cf8-b0fce5d3c3af\",\"lease_id\":\"\",\"renewable\":false,\"lease_duration\":0,\"data\":{\"accessor\":\"kv_f055aa7b\",\"config\":{\"default_lease_ttl\":0,\"force_no_cache\":false,\"max_lease_ttl\":0},\"description\":\"versioned encrypted key/value storage\",\"local\":false,\"options\":{\"version\":\"2\"},\"path\":\"mount/v2/\",\"seal_wrap\":false,\"type\":\"kv\",\"uuid\":\"eb3b578c-a0bf-2a91-19dc-4155e8ae0116\"},\"wrap_info\":null,\"warnings\":null,\"auth\":null}",
+    "rewritten": "mount/v2/data/bar",
+    "path": "mount/v2/bar/",
+    "is_v2": true
+  },
+  {
+    "mount_data": "{\"request_id\":\"db9ca87a-f7a1-70f0-89aa-8ca985483793\",\"lease_id\":\"\",\"renewable\":false,\"lease_duration\":0,\"data\":{\"accessor\":\"kv_f055aa7b\",\"config\":{\"default_lease_ttl\":0,\"force_no_cache\":false,\"max_lease_ttl\":0},\"description\":\"versioned encrypted key/value storage\",\"local\":false,\"options\":{\"version\":\"2\"},\"path\":\"mount/v2/\",\"seal_wrap\":false,\"type\":\"kv\",\"uuid\":\"eb3b578c-a0bf-2a91-19dc-4155e8ae0116\"},\"wrap_info\":null,\"warnings\":null,\"auth\":null}",
+    "rewritten": "mount/v2/data",
+    "path": "mount/v2",
+    "is_v2": true
+  },
+  {
+    "mount_data": "{\"request_id\":\"2c1e9144-af1b-41a4-1c3e-980e13f0e937\",\"lease_id\":\"\",\"renewable\":false,\"lease_duration\":0,\"data\":{\"accessor\":\"kv_f055aa7b\",\"config\":{\"default_lease_ttl\":0,\"force_no_cache\":false,\"max_lease_ttl\":0},\"description\":\"versioned encrypted key/value storage\",\"local\":false,\"options\":{\"version\":\"2\"},\"path\":\"mount/v2/\",\"seal_wrap\":false,\"type\":\"kv\",\"uuid\":\"eb3b578c-a0bf-2a91-19dc-4155e8ae0116\"},\"wrap_info\":null,\"warnings\":null,\"auth\":null}",
+    "rewritten": "mount/v2/data",
+    "path": "mount/v2/",
+    "is_v2": true
+  },
+  {
+    "mount_data": "{\"request_id\":\"ccb9fbd3-ed2c-eb98-f8e6-0f5fcb570f57\",\"lease_id\":\"\",\"renewable\":false,\"lease_duration\":0,\"data\":{\"accessor\":\"kv_f055aa7b\",\"config\":{\"default_lease_ttl\":0,\"force_no_cache\":false,\"max_lease_ttl\":0},\"description\":\"versioned encrypted key/value storage\",\"local\":false,\"options\":{\"version\":\"2\"},\"path\":\"mount/v2/\",\"seal_wrap\":false,\"type\":\"kv\",\"uuid\":\"eb3b578c-a0bf-2a91-19dc-4155e8ae0116\"},\"wrap_info\":null,\"warnings\":null,\"auth\":null}",
+    "rewritten": "mount/v2/data/data/bar",
+    "path": "mount/v2/data/bar",
+    "is_v2": true
+  },
+  {
+    "mount_data": "{\"request_id\":\"a6d671b1-9029-95ac-5560-846345443f81\",\"lease_id\":\"\",\"renewable\":false,\"lease_duration\":0,\"data\":{\"accessor\":\"kv_f055aa7b\",\"config\":{\"default_lease_ttl\":0,\"force_no_cache\":false,\"max_lease_ttl\":0},\"description\":\"versioned encrypted key/value storage\",\"local\":false,\"options\":{\"version\":\"2\"},\"path\":\"mount/v2/\",\"seal_wrap\":false,\"type\":\"kv\",\"uuid\":\"eb3b578c-a0bf-2a91-19dc-4155e8ae0116\"},\"wrap_info\":null,\"warnings\":null,\"auth\":null}",
+    "rewritten": "mount/v2/data/data/bar",
+    "path": "mount/v2/data/bar/",
+    "is_v2": true
+  },
+  {
+    "mount_data": "{\"request_id\":\"23fba99b-f552-6ec5-a0d8-f6ef41d4e4c0\",\"lease_id\":\"\",\"renewable\":false,\"lease_duration\":0,\"data\":{\"accessor\":\"kv_f055aa7b\",\"config\":{\"default_lease_ttl\":0,\"force_no_cache\":false,\"max_lease_ttl\":0},\"description\":\"versioned encrypted key/value storage\",\"local\":false,\"options\":{\"version\":\"2\"},\"path\":\"mount/v2/\",\"seal_wrap\":false,\"type\":\"kv\",\"uuid\":\"eb3b578c-a0bf-2a91-19dc-4155e8ae0116\"},\"wrap_info\":null,\"warnings\":null,\"auth\":null}",
+    "rewritten": "mount/v2/data/data",
+    "path": "mount/v2/data",
+    "is_v2": true
+  },
+  {
+    "mount_data": "{\"request_id\":\"b2d1501e-f748-4c71-0258-27b36aa95f2b\",\"lease_id\":\"\",\"renewable\":false,\"lease_duration\":0,\"data\":{\"accessor\":\"kv_f055aa7b\",\"config\":{\"default_lease_ttl\":0,\"force_no_cache\":false,\"max_lease_ttl\":0},\"description\":\"versioned encrypted key/value storage\",\"local\":false,\"options\":{\"version\":\"2\"},\"path\":\"mount/v2/\",\"seal_wrap\":false,\"type\":\"kv\",\"uuid\":\"eb3b578c-a0bf-2a91-19dc-4155e8ae0116\"},\"wrap_info\":null,\"warnings\":null,\"auth\":null}",
+    "rewritten": "mount/v2/data/data",
+    "path": "mount/v2/data/",
+    "is_v2": true
+  },
+  {
+    "mount_data": "{\"request_id\":\"253551b3-a01e-1126-0dee-f5fd3470b4a4\",\"lease_id\":\"\",\"renewable\":false,\"lease_duration\":0,\"data\":{\"accessor\":\"generic_c45ac6cc\",\"config\":{\"default_lease_ttl\":86400,\"force_no_cache\":false,\"max_lease_ttl\":604800},\"description\":\"encrypted key/value storage\",\"local\":false,\"options\":{},\"path\":\"mount/v1/\",\"seal_wrap\":false,\"type\":\"generic\",\"uuid\":\"b0c47310-507d-e5d6-f186-03d3aa71cb58\"},\"wrap_info\":null,\"warnings\":null,\"auth\":null}",
+    "rewritten": "mount/v1/bar",
+    "path": "mount/v1/bar",
+    "is_v2": false
+  },
+  {
+    "mount_data": "{\"request_id\":\"1f5f8620-cdb3-0aa1-81f3-4308e3e5fd6a\",\"lease_id\":\"\",\"renewable\":false,\"lease_duration\":0,\"data\":{\"accessor\":\"generic_c45ac6cc\",\"config\":{\"default_lease_ttl\":86400,\"force_no_cache\":false,\"max_lease_ttl\":604800},\"description\":\"encrypted key/value storage\",\"local\":false,\"options\":{},\"path\":\"mount/v1/\",\"seal_wrap\":false,\"type\":\"generic\",\"uuid\":\"b0c47310-507d-e5d6-f186-03d3aa71cb58\"},\"wrap_info\":null,\"warnings\":null,\"auth\":null}",
+    "rewritten": "mount/v1/bar",
+    "path": "mount/v1/bar/",
+    "is_v2": false
+  },
+  {
+    "mount_data": "{\"request_id\":\"a9ed61f0-fc96-3f5e-188a-c52afcb8341d\",\"lease_id\":\"\",\"renewable\":false,\"lease_duration\":0,\"data\":{\"accessor\":\"generic_c45ac6cc\",\"config\":{\"default_lease_ttl\":86400,\"force_no_cache\":false,\"max_lease_ttl\":604800},\"description\":\"encrypted key/value storage\",\"local\":false,\"options\":{},\"path\":\"mount/v1/\",\"seal_wrap\":false,\"type\":\"generic\",\"uuid\":\"b0c47310-507d-e5d6-f186-03d3aa71cb58\"},\"wrap_info\":null,\"warnings\":null,\"auth\":null}",
+    "rewritten": "mount/v1",
+    "path": "mount/v1",
+    "is_v2": false
+  },
+  {
+    "mount_data": "{\"request_id\":\"fe545ea3-06a5-51d3-0236-4982e896cf8f\",\"lease_id\":\"\",\"renewable\":false,\"lease_duration\":0,\"data\":{\"accessor\":\"generic_c45ac6cc\",\"config\":{\"default_lease_ttl\":86400,\"force_no_cache\":false,\"max_lease_ttl\":604800},\"description\":\"encrypted key/value storage\",\"local\":false,\"options\":{},\"path\":\"mount/v1/\",\"seal_wrap\":false,\"type\":\"generic\",\"uuid\":\"b0c47310-507d-e5d6-f186-03d3aa71cb58\"},\"wrap_info\":null,\"warnings\":null,\"auth\":null}",
+    "rewritten": "mount/v1",
+    "path": "mount/v1/",
+    "is_v2": false
+  }
+]
