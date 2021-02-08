@@ -39,7 +39,7 @@ func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, 
 	if err != nil {
 		return nil, errors.New("secret not found")
 	}
-	value, ok := params[name]
+	value, ok := matchCaseInsensitive(name, params)
 	if !ok {
 		return nil, errors.New("secret key not found")
 	}
