@@ -23,3 +23,12 @@ func match(name string, patterns []string) bool {
 	}
 	return false
 }
+
+func matchCaseInsensitive(name string, params map[string]string) (string, bool) {
+	for key, value := range params {
+		if strings.ToLower(key) == strings.ToLower(name) {
+			return value, true
+		}
+	}
+	return "", false
+}
