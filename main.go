@@ -12,8 +12,8 @@ import (
 	"github.com/drone/drone-go/plugin/secret"
 	"github.com/drone/drone-vault/plugin"
 	"github.com/drone/drone-vault/plugin/token"
-	"github.com/drone/drone-vault/plugin/token/kubernetes"
 	"github.com/drone/drone-vault/plugin/token/approle"
+	"github.com/drone/drone-vault/plugin/token/kubernetes"
 
 	"github.com/hashicorp/vault/api"
 	"github.com/kelseyhightower/envconfig"
