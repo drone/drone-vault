@@ -125,7 +125,7 @@ func (p *plugin) find(path string) (map[string]string, error) {
 		case uint64:
 			s = strconv.FormatUint(uint64(castValue), 10)
 		default:
-			s = fmt.Sprintf("%v", castValue)
+			s = fmt.Sprint(castValue)
 		}
 
 		params[k] = s
