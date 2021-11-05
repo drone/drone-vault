@@ -5,9 +5,8 @@ name: default
 
 steps:
 - name: build
-  image: golang:1.12
+  image: golang:1.17
   commands:
-  - apt update && apt install ca-certificates libgnutls30 -y
   - go test -v ./...
   - sh scripts/build.sh
 
