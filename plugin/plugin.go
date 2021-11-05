@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/drone/drone-go/drone"
 	"github.com/drone/drone-go/plugin/secret"
@@ -97,38 +96,8 @@ func (p *plugin) find(path string) (map[string]string, error) {
 	}
 
 	params := map[string]string{}
-	for k, rawValue := range secret.Data {
-		var s string
-		switch castValue := rawValue.(type) {
-		case bool:
-			s = strconv.FormatBool(castValue)
-		case string:
-			s = castValue
-		case int:
-			s = strconv.FormatInt(int64(castValue), 10)
-		case int8:
-			s = strconv.FormatInt(int64(castValue), 10)
-		case int16:
-			s = strconv.FormatInt(int64(castValue), 10)
-		case int32:
-			s = strconv.FormatInt(int64(castValue), 10)
-		case int64:
-			s = strconv.FormatInt(int64(castValue), 10)
-		case uint:
-			s = strconv.FormatUint(uint64(castValue), 10)
-		case uint8:
-			s = strconv.FormatUint(uint64(castValue), 10)
-		case uint16:
-			s = strconv.FormatUint(uint64(castValue), 10)
-		case uint32:
-			s = strconv.FormatUint(uint64(castValue), 10)
-		case uint64:
-			s = strconv.FormatUint(uint64(castValue), 10)
-		default:
-			s = fmt.Sprint(castValue)
-		}
-
-		params[k] = s
+	for k, v := range secret.Data {
+		params[k] = fmt.Sprint(v)
 	}
 	return params, err
 }
