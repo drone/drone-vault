@@ -6,6 +6,8 @@ package plugin
 
 import (
 	"context"
+	"encoding/json"
+	"bytes"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -28,9 +30,9 @@ var noContext = context.Background()
 //    export VAULT_TOKEN=dummy
 
 func TestPlugin(t *testing.T) {
+	fileSecret, _:= ioutil.ReadFile("testdata/secret.json") 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		out, _ := ioutil.ReadFile("testdata/secret.json")
-		w.Write(out)
+		w.Write(fileSecret)
 	}))
 	defer ts.Close()
 
@@ -39,33 +41,89 @@ func TestPlugin(t *testing.T) {
 		MaxRetries: 1,
 	})
 
-	req := &secret.Request{
-		Path: "secret/docker",
-		Name: "username",
-		Build: drone.Build{
-			Event:  "push",
-			Target: "master",
-		},
-		Repo: drone.Repo{
-			Slug: "octocat/hello-world",
-		},
-	}
 	plugin := New(client)
-	got, err := plugin.Find(noContext, req)
-	if err != nil {
-		t.Error(err)
-		return
+
+	// convert testdata/secret.json into mock return value
+  // used for asterisk selector test.
+	var jsonSecret map[string]map[string]interface{}
+	json.Unmarshal(fileSecret, &jsonSecret)
+	jsonSecretDataArr, _ := json.Marshal(filterStringData(jsonSecret["data"]))
+	jsonSecretData := bytes.NewBuffer(jsonSecretDataArr).String()
+
+	var tests = []struct {
+		Request secret.Request
+		Want    drone.Secret
+	}{
+		{
+			secret.Request{
+				Path: "secret/docker",
+				Name: "username",
+				Build: drone.Build{
+					Event:  "push",
+					Target: "master",
+				},
+				Repo: drone.Repo{
+					Slug: "octocat/hello-world",
+				},
+			},
+			drone.Secret{
+				Name: "username",
+				Data: "david",
+				Pull: true,
+				Fork: true,
+			},
+		},
+		{
+			secret.Request{
+				Path: "secret/docker",
+				Name: "password",
+				Build: drone.Build{
+					Event:  "push",
+					Target: "master",
+				},
+				Repo: drone.Repo{
+					Slug: "octocat/hello-world",
+				},
+			},
+			drone.Secret{
+				Name: "password",
+				Data: "BnQw&XDWgaEeT9XGTT29",
+				Pull: true,
+				Fork: true,
+			},
+		},
+		{
+			secret.Request{
+				Path: "secret/docker",
+				Name: "*",
+				Build: drone.Build{
+					Event:  "push",
+					Target: "master",
+				},
+				Repo: drone.Repo{
+					Slug: "octocat/hello-world",
+				},
+			},
+			drone.Secret{
+				Name: "*",
+				Data: jsonSecretData,
+				Pull: true,
+				Fork: true,
+			},
+		},
 	}
 
-	want := &drone.Secret{
-		Name: "username",
-		Data: "david",
-		Pull: true,
-		Fork: true,
-	}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Errorf(diff)
-		return
+	for _, tc := range tests {
+		got, err := plugin.Find (noContext, &tc.Request)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		if diff := cmp.Diff(got, &tc.Want); diff != "" {
+			t.Errorf(diff)
+			return
+		}
 	}
 }
 

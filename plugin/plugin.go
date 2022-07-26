@@ -7,6 +7,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"encoding/json"
 
 	"github.com/drone/drone-go/drone"
 	"github.com/drone/drone-go/plugin/secret"
@@ -39,9 +40,20 @@ func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, 
 	if err != nil {
 		return nil, errors.New("secret not found")
 	}
-	value, ok := params[name]
-	if !ok {
-		return nil, errors.New("secret key not found")
+
+	var value string
+	if name == "*" {
+		jsonVal, err := json.Marshal(params) 
+		if err != nil {
+			return nil, errors.New("could not parse json")
+		}
+		value = string(jsonVal)
+	} else {
+		var ok bool
+		value, ok = params[name]
+		if !ok {
+			return nil, errors.New("secret key not found")
+		}
 	}
 
 	// the user can filter out requets based on event type
@@ -94,13 +106,17 @@ func (p *plugin) find(path string) (map[string]string, error) {
 		secret.Data = data
 	}
 
+	return filterStringData(secret.Data), err
+}
+
+func filterStringData(data map[string]interface{}) map[string]string {
 	params := map[string]string{}
-	for k, v := range secret.Data {
+	for k, v := range data {
 		s, ok := v.(string)
 		if !ok {
 			continue
 		}
 		params[k] = s
 	}
-	return params, err
+	return params
 }
