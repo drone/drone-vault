@@ -5,9 +5,9 @@
 package plugin
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"bytes"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -30,7 +30,7 @@ var noContext = context.Background()
 //    export VAULT_TOKEN=dummy
 
 func TestPlugin(t *testing.T) {
-	fileSecret, _:= ioutil.ReadFile("testdata/secret.json") 
+	fileSecret, _ := ioutil.ReadFile("testdata/secret.json")
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write(fileSecret)
 	}))
@@ -44,7 +44,7 @@ func TestPlugin(t *testing.T) {
 	plugin := New(client)
 
 	// convert testdata/secret.json into mock return value
-  // used for asterisk selector test.
+	// used for asterisk selector test.
 	var jsonSecret map[string]map[string]interface{}
 	json.Unmarshal(fileSecret, &jsonSecret)
 	jsonSecretDataArr, _ := json.Marshal(filterStringData(jsonSecret["data"]))
@@ -114,7 +114,7 @@ func TestPlugin(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got, err := plugin.Find (noContext, &tc.Request)
+		got, err := plugin.Find(noContext, &tc.Request)
 		if err != nil {
 			t.Error(err)
 			return

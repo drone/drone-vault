@@ -129,7 +129,7 @@ func TestVaultApproleRenewHigherTTL(t *testing.T) {
 			data, _ = ioutil.ReadFile("testdata/renew_higher_ttl.json")
 		} else if r.URL.Path == "/v1/auth/approle/login" {
 			data, _ = ioutil.ReadFile("testdata/new_token.json")
-		} else{
+		} else {
 			t.Errorf("Invalid path, %v", r.URL.Path)
 		}
 		w.Write(data)
@@ -164,7 +164,7 @@ func TestVaultApproleRenewLowerTTL(t *testing.T) {
 			data, _ = ioutil.ReadFile("testdata/renew_lower_ttl.json")
 		} else if r.URL.Path == "/v1/auth/approle/login" {
 			data, _ = ioutil.ReadFile("testdata/new_token.json")
-		} else{
+		} else {
 			t.Errorf("Invalid path, %v", r.URL.Path)
 		}
 		w.Write(data)

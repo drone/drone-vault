@@ -6,8 +6,8 @@ package plugin
 
 import (
 	"context"
-	"errors"
 	"encoding/json"
+	"errors"
 
 	"github.com/drone/drone-go/drone"
 	"github.com/drone/drone-go/plugin/secret"
@@ -43,7 +43,7 @@ func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, 
 
 	var value string
 	if name == "*" {
-		jsonVal, err := json.Marshal(params) 
+		jsonVal, err := json.Marshal(params)
 		if err != nil {
 			return nil, errors.New("could not parse json")
 		}
