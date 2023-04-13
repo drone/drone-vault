@@ -10,6 +10,7 @@ import (
 
 	"github.com/drone/drone-go/drone"
 	"github.com/drone/drone-go/plugin/secret"
+	"github.com/sirupsen/logrus"
 
 	"github.com/hashicorp/vault/api"
 )
@@ -27,6 +28,14 @@ type plugin struct {
 }
 
 func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, error) {
+	logEvent := logrus.WithFields(logrus.Fields{
+		"event":  req.Build.Event,
+		"repo":   req.Repo.Slug,
+		"ref":    req.Build.Ref,
+		"link":   req.Build.Link,
+		"secret": req.Path,
+	})
+
 	path := req.Path
 	name := req.Name
 	if name == "" {
@@ -49,7 +58,10 @@ func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, 
 	// user-defined filter logic.
 	events := extractEvents(params)
 	if !match(req.Build.Event, events) {
+		logEvent.WithField("allowed_events", events).Info("access denied")
 		return nil, errors.New("access denied: event does not match")
+	} else {
+		logEvent.WithField("allowed_events", events).Debug("event matched")
 	}
 
 	// the user can filter out requets based on repository
@@ -57,7 +69,10 @@ func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, 
 	// user-defined filter logic.
 	repos := extractRepos(params)
 	if !match(req.Repo.Slug, repos) {
+		logEvent.WithField("allowed_repos", repos).Info("access denied")
 		return nil, errors.New("access denied: repository does not match")
+	} else {
+		logEvent.WithField("allowed_repos", repos).Debug("repository matched")
 	}
 
 	// the user can filter out requets based on repository
@@ -65,8 +80,13 @@ func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, 
 	// for this user-defined filter logic.
 	branches := extractBranches(params)
 	if !match(req.Build.Target, branches) {
+		logEvent.WithField("allowed_branches", branches).Info("access denied")
 		return nil, errors.New("access denied: branch does not match")
+	} else {
+		logEvent.WithField("allowed_branches", branches).Debug("branch matched")
 	}
+
+	logEvent.Debug("secret matched and returned")
 
 	return &drone.Secret{
 		Name: name,
