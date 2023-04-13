@@ -6,14 +6,14 @@ A secret extension that provides optional support for sourcing secrets from Vaul
 
 Create a shared secret:
 
-```text
+```bash
 $ openssl rand -hex 16
 bea26a2221fd8090ea38720fc445eca6
 ```
 
 Download and run the plugin:
 
-```text
+```bash
 $ docker run -d \
   --publish=3000:3000 \
   --env=DRONE_DEBUG=true \
@@ -26,7 +26,7 @@ $ docker run -d \
 
 Using approle authentication:
 
-```text
+```bash
 $ docker run -d \
   --publish=3000:3000 \
   --env=DRONE_DEBUG=true \
