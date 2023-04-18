@@ -5,13 +5,13 @@ name: default
 
 steps:
 - name: build
-  image: golang:1.12
+  image: golang:1.19
   commands:
   - go test -v ./...
   - sh scripts/build.sh
 
 - name: publish_amd64
-  image: plugins/docker:18
+  image: plugins/docker
   settings:
     auto_tag: true
     auto_tag_suffix: linux-amd64
@@ -28,7 +28,7 @@ steps:
     - push
     - tag
 
-- image: plugins/docker:18
+- image: plugins/docker
   name: publish_arm64
   settings:
     auto_tag: true
@@ -47,7 +47,7 @@ steps:
     - tag
 
 - name: publish_arm
-  image: plugins/docker:18
+  image: plugins/docker
   settings:
     auto_tag: true
     auto_tag_suffix: linux-arm
