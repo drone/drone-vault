@@ -4,7 +4,10 @@
 
 package plugin
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // helper function extracts the branch filters from the
 // secret payload in key value format.
@@ -34,6 +37,18 @@ func extractEvents(params map[string]string) []string {
 	for key, value := range params {
 		if strings.EqualFold(key, "X-Drone-Events") {
 			return parseCommaSeparated(value)
+		}
+	}
+	return nil
+}
+
+// helper function extracts the fork filter from the
+// secret payload in key value format.
+func extractDisallowForks(params map[string]string) *bool {
+	for key, value := range params {
+		if strings.EqualFold(key, "X-Drone-Disallow-Forks") {
+			v, _ := strconv.ParseBool(value)
+			return &v // Allow non-truthy or non-falsey values are false
 		}
 	}
 	return nil
