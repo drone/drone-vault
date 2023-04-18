@@ -10,6 +10,7 @@ import (
 
 	"github.com/drone/drone-go/drone"
 	"github.com/drone/drone-go/plugin/secret"
+	"github.com/sirupsen/logrus"
 
 	"github.com/hashicorp/vault/api"
 )
@@ -27,6 +28,13 @@ type plugin struct {
 }
 
 func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, error) {
+	logEvent := logrus.WithFields(logrus.Fields{
+		"event":  req.Build.Event,
+		"repo":   req.Repo.Slug,
+		"ref":    req.Build.Ref,
+		"secret": req.Path,
+	})
+
 	path := req.Path
 	name := req.Name
 	if name == "" {
@@ -49,7 +57,9 @@ func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, 
 	// user-defined filter logic.
 	events := extractEvents(params)
 	if !match(req.Build.Event, events) {
-		return nil, errors.New("access denied: event does not match")
+		msg := "access denied: event does not match"
+		logEvent.WithField("allowed_events", events).Debug(msg)
+		return nil, errors.New(msg)
 	}
 
 	// the user can filter out requets based on repository
@@ -57,7 +67,9 @@ func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, 
 	// user-defined filter logic.
 	repos := extractRepos(params)
 	if !match(req.Repo.Slug, repos) {
-		return nil, errors.New("access denied: repository does not match")
+		msg := "access denied: repository does not match"
+		logEvent.WithField("allowed_repos", repos).Debug(msg)
+		return nil, errors.New(msg)
 	}
 
 	// the user can filter out requets based on repository
@@ -65,8 +77,12 @@ func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, 
 	// for this user-defined filter logic.
 	branches := extractBranches(params)
 	if !match(req.Build.Target, branches) {
-		return nil, errors.New("access denied: branch does not match")
+		msg := "access denied: branch does not match"
+		logEvent.WithField("allowed_branches", branches).Debug(msg)
+		return nil, errors.New(msg)
 	}
+
+	logEvent.Debug("secret matched and returned")
 
 	return &drone.Secret{
 		Name: name,
