@@ -12,8 +12,8 @@ import (
 	"github.com/drone/drone-go/plugin/secret"
 	"github.com/drone/drone-vault/plugin"
 	"github.com/drone/drone-vault/plugin/token"
-	"github.com/drone/drone-vault/plugin/token/kubernetes"
 	"github.com/drone/drone-vault/plugin/token/approle"
+	"github.com/drone/drone-vault/plugin/token/kubernetes"
 
 	"github.com/hashicorp/vault/api"
 	"github.com/kelseyhightower/envconfig"
@@ -40,6 +40,7 @@ type config struct {
 	Address            string        `envconfig:"DRONE_BIND"`
 	Debug              bool          `envconfig:"DRONE_DEBUG"`
 	Secret             string        `envconfig:"DRONE_SECRET"`
+	DisallowForks      bool          `envconfig:"DRONE_DISALLOW_FORKS"`
 	VaultAddr          string        `envconfig:"VAULT_ADDR"`
 	VaultRenew         time.Duration `envconfig:"VAULT_TOKEN_RENEWAL"`
 	VaultTTL           time.Duration `envconfig:"VAULT_TOKEN_TTL"`
@@ -80,9 +81,13 @@ func main() {
 	// global context
 	ctx := context.Background()
 
+	if spec.DisallowForks {
+		logrus.Info("globally disallowing secrets in forks")
+	}
+
 	http.Handle("/", secret.Handler(
 		spec.Secret,
-		plugin.New(client),
+		plugin.New(client, spec.DisallowForks),
 		logrus.StandardLogger(),
 	))
 

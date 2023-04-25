@@ -6,6 +6,7 @@ package plugin
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -50,7 +51,7 @@ func TestPlugin(t *testing.T) {
 			Slug: "octocat/hello-world",
 		},
 	}
-	plugin := New(client)
+	plugin := New(client, false)
 	got, err := plugin.Find(noContext, req)
 	if err != nil {
 		t.Error(err)
@@ -92,7 +93,7 @@ func TestPlugin_FilterBranches(t *testing.T) {
 			Slug: "octocat/hello-world",
 		},
 	}
-	plugin := New(client)
+	plugin := New(client, false)
 	_, err := plugin.Find(noContext, req)
 	if err == nil {
 		t.Errorf("Expect error")
@@ -126,7 +127,7 @@ func TestPlugin_FilterRepo(t *testing.T) {
 			Slug: "spaceghost/hello-world",
 		},
 	}
-	plugin := New(client)
+	plugin := New(client, false)
 	_, err := plugin.Find(noContext, req)
 	if err == nil {
 		t.Errorf("Expect error")
@@ -160,7 +161,7 @@ func TestPlugin_FilterEvent(t *testing.T) {
 			Slug: "octocat/hello-world",
 		},
 	}
-	plugin := New(client)
+	plugin := New(client, false)
 	_, err := plugin.Find(noContext, req)
 	if err == nil {
 		t.Errorf("Expect error")
@@ -168,6 +169,114 @@ func TestPlugin_FilterEvent(t *testing.T) {
 	}
 	if want, got := err.Error(), "access denied: event does not match"; got != want {
 		t.Errorf("Want error %q, got %q", want, got)
+	}
+}
+
+func TestPlugin_FilterForks(t *testing.T) {
+	cases := []struct {
+		name                       string
+		disallowForksSecretSetting string
+		disallowForksGlobalSetting bool
+		expectedError              string
+		isFork                     bool
+	}{
+		{
+			name:                       "disallow forks, secret setting is true",
+			disallowForksSecretSetting: "true",
+			disallowForksGlobalSetting: false,
+			expectedError:              "access denied: forks are not allowed",
+			isFork:                     true,
+		},
+		{
+			name:                       "disallow forks, global setting is true",
+			disallowForksSecretSetting: "",
+			disallowForksGlobalSetting: true,
+			expectedError:              "access denied: forks are not allowed",
+			isFork:                     true,
+		},
+		{
+			name:                       "disallow forks, secret setting is false",
+			disallowForksSecretSetting: "false",
+			disallowForksGlobalSetting: false,
+			expectedError:              "",
+			isFork:                     true,
+		},
+		{
+			name:                       "disallow forks, secret setting is not set",
+			disallowForksSecretSetting: "",
+			disallowForksGlobalSetting: false,
+			expectedError:              "",
+			isFork:                     true,
+		},
+		{
+			name:                       "disallow forks, secret setting enabled but not a fork",
+			disallowForksSecretSetting: "true",
+			disallowForksGlobalSetting: false,
+			expectedError:              "",
+			isFork:                     false,
+		},
+		{
+			name:                       "disallow forks, global setting enabled but not a fork",
+			disallowForksSecretSetting: "",
+			disallowForksGlobalSetting: true,
+			expectedError:              "",
+			isFork:                     false,
+		},
+		{
+			name:                       "allow forks, secret setting is false (override global setting)",
+			disallowForksSecretSetting: "false",
+			disallowForksGlobalSetting: true,
+			expectedError:              "",
+			isFork:                     true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				payloadBefore, _ := ioutil.ReadFile("testdata/secret.json")
+				payload := make(map[string]interface{})
+				json.Unmarshal(payloadBefore, &payload)
+				if c.disallowForksSecretSetting != "" {
+					data := payload["data"].(map[string]interface{})
+					data["X-Drone-Disallow-Forks"] = c.disallowForksSecretSetting
+					payload["data"] = data
+				}
+				payloadAfter, _ := json.Marshal(payload)
+				w.Write(payloadAfter)
+			}))
+			defer ts.Close()
+
+			client, _ := api.NewClient(&api.Config{
+				Address:    ts.URL,
+				MaxRetries: 1,
+			})
+
+			req := &secret.Request{
+				Path: "secret/docker",
+				Name: "username",
+				Build: drone.Build{
+					Event:  "push",
+					Target: "master",
+				},
+				Repo: drone.Repo{
+					Slug: "octocat/hello-world",
+				},
+			}
+			if c.isFork {
+				req.Build.Fork = "spaceghost/hello-world"
+			}
+
+			plugin := New(client, c.disallowForksGlobalSetting)
+			gotErr := ""
+			if _, err := plugin.Find(noContext, req); err != nil {
+				gotErr = err.Error()
+			}
+
+			if gotErr != c.expectedError {
+				t.Errorf("Want error %q, got %q", c.expectedError, gotErr)
+			}
+		})
 	}
 }
 
@@ -195,7 +304,7 @@ func TestPlugin_NotFound(t *testing.T) {
 			Slug: "octocat/hello-world",
 		},
 	}
-	plugin := New(client)
+	plugin := New(client, false)
 	_, err := plugin.Find(noContext, req)
 	if err == nil {
 		t.Errorf("Expect error")
@@ -231,7 +340,7 @@ func TestPlugin_KeyNotFound(t *testing.T) {
 			Slug: "octocat/hello-world",
 		},
 	}
-	plugin := New(client)
+	plugin := New(client, false)
 	_, err := plugin.Find(noContext, req)
 	if err == nil {
 		t.Errorf("Expect error")
