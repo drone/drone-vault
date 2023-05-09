@@ -6,7 +6,13 @@ package plugin
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"path"
+	"strconv"
+	"strings"
 
 	"github.com/drone/drone-go/drone"
 	"github.com/drone/drone-go/plugin/secret"
@@ -118,6 +124,8 @@ func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, 
 
 // helper function returns the secret from vault.
 func (p *plugin) find(path string) (map[string]string, error) {
+	isV2, path := p.rewritePath(path)
+
 	secret, err := p.client.Logical().Read(path)
 	if err != nil {
 		return nil, err
@@ -126,12 +134,18 @@ func (p *plugin) find(path string) (map[string]string, error) {
 		return nil, errors.New("secret not found")
 	}
 
-	// HACK: the vault v2 key value store is confusing
-	// and I could not quite figure out how to work with
-	// the api. This is the workaround I came up with.
-	v := secret.Data["data"]
-	if data, ok := v.(map[string]interface{}); ok {
-		secret.Data = data
+	// the V2 api includes both "data" and "metadata" fields within the top level "data" -- we only care about data.
+	// https://www.vaultproject.io/api-docs/secret/kv/kv-v1#sample-response
+	// v1 data schema:
+	// { properties: { data: { type: object, description: "the actual data" }}}
+	// https://www.vaultproject.io/api/secret/kv/kv-v2#sample-response-1
+	// v2 data schema:
+	// { properties: { data: { properties: { data: { type: object, description: "the actual data" }}}}}
+	if isV2 {
+		v := secret.Data["data"]
+		if data, ok := v.(map[string]interface{}); ok {
+			secret.Data = data
+		}
 	}
 
 	params := map[string]string{}
@@ -143,4 +157,94 @@ func (p *plugin) find(path string) (map[string]string, error) {
 		params[k] = s
 	}
 	return params, err
+}
+
+// rewritePath rewrites a secret path if need be according to storage engine constraints; if it fails, it returns the
+// original path.
+//
+// TL;DR: vault requires rewriting secret paths for the V2 engine mount points. This is most visible when you use the
+// CLI to output curl strings:
+//    $ vault kv get \
+//      -output-curl-string \
+//     	foo/versioned/bar
+//    curl -H "X-Vault-Request: true" \
+//   	-H "X-Vault-Token: $(vault print token)" \
+//  	https://vault.example.com/v1/foo/versioned/data/bar
+//
+// Note the addition of "data" in the output curl string. This only occurs for the v2 engine. This function
+// reproduces the logic from the CLI:
+// https://github.com/hashicorp/vault/blob/7aa1ffa92ee61b977efad1488b8f309b1e2136df/command/kv_get.go#L94-L110
+func (p *plugin) rewritePath(path string) (bool, string) {
+	r := p.client.NewRequest("GET", "/v1/sys/internal/ui/mounts/"+path)
+	resp, err := p.client.RawRequest(r)
+	if err != nil {
+		logrus.Debugf("failed querying mount point; defaulting to original: %v", err)
+		return false, path
+	}
+	defer resp.Body.Close()
+	isV2, rewritten, err := rewritePath(resp.Body, path)
+	if err != nil {
+		logrus.Debugf("failed rewriting; defaulting to original: %v", err)
+		return false, path
+	}
+	logrus.Debugf("rewrote %q to %q", path, rewritten)
+	return isV2, rewritten
+}
+
+func rewritePath(r io.Reader, original string) (isV2 bool, rewritten string, _ error) {
+	defer func() {
+		// never permit a trailing slash, no matter what user puts in
+		rewritten = strings.TrimSuffix(rewritten, "/")
+	}()
+	/*
+		Example v2 response:
+		{
+		  "request_id": "4a3a3ef6-d0a8-9a9b-d7eb-c320ef170b55",
+		  "lease_id": "",
+		  "renewable": false,
+		  "lease_duration": 0,
+		  "data": {
+		    "accessor": "kv_f055aa7b",
+		    "config": {
+		      "default_lease_ttl": 0,
+		      "force_no_cache": false,
+		      "max_lease_ttl": 0
+		    },
+		    "description": "versioned encrypted key/value storage",
+		    "local": false,
+		    "options": {
+		      "version": "2"
+		    },
+		    "path": "foo/versioned/",
+		    "seal_wrap": false,
+		    "type": "kv",
+		    "uuid": "eb3b578c-a0bf-2a91-19dc-4155e8ae0116"
+		  },
+		  "wrap_info": null,
+		  "warnings": null,
+		  "auth": null
+		}
+	*/
+	var response struct {
+		Data struct {
+			Options struct {
+				Version string `json:"version"`
+			} `json:"options"`
+			Path string `json:"path"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(r).Decode(&response); err != nil {
+		return false, original, fmt.Errorf("failed parsing response: %v", err)
+	}
+	v, err := strconv.Atoi(response.Data.Options.Version)
+	if err != nil || v != 2 {
+		return false, original, nil // we only rewrite v2
+	}
+
+	mountPath := response.Data.Path
+	if original == mountPath || original == strings.TrimSuffix(mountPath, "/") {
+		return true, path.Join(mountPath, "data"), nil
+	}
+
+	return true, path.Join(mountPath, "data", strings.TrimPrefix(original, mountPath)), nil
 }

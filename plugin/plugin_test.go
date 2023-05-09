@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/drone/drone-go/drone"
@@ -349,5 +351,68 @@ func TestPlugin_KeyNotFound(t *testing.T) {
 	if got, want := err.Error(), "secret key not found"; got != want {
 		t.Errorf("Want error %q, got %q", want, got)
 		return
+	}
+}
+
+/* Test_rewritePath establishes that the behavior of our path rewrite logic exactly parallels that of the Vault CLI;
+ generated with logic like (requires authentication to a vault namespace with both v1 and v2 engines mounted):
+
+main() {
+  for path in mount{/v2{,/data},/v1}{/bar,}{,/}; do
+    jq --null-input \
+      --arg mount_data "$(get_mount "${path}")" \
+      --arg rewritten "$(get_rewritten_path "${path}")" \
+      --arg path "${path}" \
+      '{$mount_data, $rewritten, $path}'
+  done |
+    jq -s '[.[] | (.is_v2 = (.mount_data | fromjson).data.options.version == "2")]'
+}
+
+get_mount() {
+  local path="${1}"
+  curl \
+    --silent \
+    -H "X-Vault-Request: true" \
+    -H "X-Vault-Token: $(vault print token)" \
+    "https://vault.example.com/v1/sys/internal/ui/mounts/${path}"
+}
+
+get_rewritten_path() {
+  local path="${1}"
+  vault kv get -output-curl-string "${path}" | cut -d/ -f5-
+}
+
+main
+*/
+func Test_rewritePath(t *testing.T) {
+	var testCases []struct {
+		Path      string `json:"path"`
+		MountData string `json:"mount_data"`
+		Rewritten string `json:"rewritten"`
+		IsV2      bool   `json:"is_v2"`
+	}
+	func() {
+		f, err := os.Open("testdata/v2.json")
+		if err != nil {
+			t.Skipf("expected test data present at testdata/v2.json: %v", err)
+		}
+		defer f.Close()
+		if err := json.NewDecoder(f).Decode(&testCases); err != nil {
+			t.Fatalf("malformed test data: %v", err)
+		}
+	}()
+	for _, tc := range testCases {
+		t.Run(strings.ReplaceAll(tc.Path, "/", "_"), func(t *testing.T) {
+			isV2, rewrite, err := rewritePath(strings.NewReader(tc.MountData), tc.Path)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if rewrite != tc.Rewritten {
+				t.Errorf("expected %q but got %q", tc.Rewritten, rewrite)
+			}
+			if isV2 != tc.IsV2 {
+				t.Errorf("expected %v but got %v", tc.IsV2, isV2)
+			}
+		})
 	}
 }
