@@ -85,6 +85,10 @@ func main() {
 		logrus.Info("globally disallowing secrets in forks")
 	}
 
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK"))
+	})
+
 	http.Handle("/", secret.Handler(
 		spec.Secret,
 		plugin.New(client, spec.DisallowForks),
